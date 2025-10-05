@@ -65,11 +65,11 @@ export default function BeforeComponent(props) {
 
     // Convert componentDidMount to useEffect
     useEffect(() => {
-       console.log('Component mounted with otherHeight:', otherHeight);
+    //    console.log('Component mounted with otherHeight:', otherHeight);
     }, []);
 	useEffect(() => {
         if (otherHeight !== undefined) {
-            console.log('otherHeight updated:', otherHeight);
+            // console.log('otherHeight updated:', otherHeight);
         }
     }, [otherHeight]);
 

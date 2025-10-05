@@ -14,6 +14,7 @@ import { Alert } from 'react-native';
 import { GetIdStr, GetPreviewNews, GetRoleStrCustomer, GetTimeStr, SortComCustomArr, UpdateHtmlStr, parseApiData } from './data/common';
 import { detailDataSource, moduleLabelArr, tempArrServiceCourse } from './data/constant';
 import { CreateNoteChannel } from "./data/pushNote";
+import LoadingComponent from "./Loading";
 
 // Constants
 const apiUrl = 'https://your-api-url.com/'; // Replace with your actual API URL
@@ -504,8 +505,243 @@ export default function RootLayout() {
 				<Stack.Screen
 					name="First"
 					options={{ headerShown: false }}
+					initialParams={{ 
+						test, codeStr, selIdx, selFirst, mainInfo, systemOptionArr, 
+						setCodeStr, setSelFirst, onClickCode, onClickEmail, setLoading,
+						showError: (error) => setError(error),
+						setSelSystemIdx: (newIdx) => {
+							saveSelIdx = newIdx;
+							setSelSystemIdx(newIdx);
+						}
+					}}
+				/>
+
+				<Stack.Screen
+					name="QRScan"
+					options={{ headerShown: false }}
+					initialParams={{
+						openProfile: () => setProfile(true),
+						setCodeStr: (str) => {
+							setTimeout(() => { onClickCode(true, str, 'camera') }, 100);
+						}
+					}}
+				/>
+				<Stack.Screen
+					name="Total"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, selSystem, unRead,
+						setChartKey: (chartKey) => setChartKey(chartKey),
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="InvoiceMain"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, selSystem, unRead, invoiceArr,
+						setSelInvoice,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="InvoicePDF"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, selInvoice,
+						setSelInvoice,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="ChartFirst"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, roleInfo,
+						setChartKey: (chartKey) => setChartKey(chartKey),
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="ChartMain"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, selSystem, chartKey,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="ChartDetail"
+					options={{ headerShown: false }}
+					initialParams={{
+						moduleInfo, chartKey,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+
+				<Stack.Screen
+					name="Profile"
+					options={{ headerShown: false }}
+					initialParams={{
+						profile, mainInfo,
+						closeProfile: () => setProfile(false),
+						setLogout: () => setLogout(),
+						setMainInfo,
+						setLoading: (loading) => setLoading(loading)
+					}}
+				/>
+				<Stack.Screen
+					name="Timeline"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, selSystem,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="AGB"
+					options={{ headerShown: false }}
+					initialParams={{}}
+				/>
+				<Stack.Screen
+					name="Impress"
+					options={{ headerShown: false }}
+					initialParams={{}}
+				/>
+				<Stack.Screen
+					name="News"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, newsArr
+					}}
+				/>
+				<Stack.Screen
+					name="Weather"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, weatherArr
+					}}
+				/>
+
+				<Stack.Screen
+					name="SupportMain"
+					options={{ headerShown: false }}
+					initialParams={{
+						selSystem, unRead
+					}}
+				/>
+				<Stack.Screen
+					name="TicketCreate"
+					options={{ headerShown: false }}
+					initialParams={{
+						selSystem, mainInfo, ticketArr,
+						setLoading: (loading) => setLoading(loading),
+						callTicketAPI: () => getTicketData()
+					}}
+				/>
+				<Stack.Screen
+					name="TicketList"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo, selSystem, ticketArr,
+						openDetailTicket: (ticketId) => {
+							setSelTicketId(ticketId);
+							setTimeout(() => { navigationRef.navigate('TicketChat'); }, 0);
+						}
+					}}
+				/>
+				<Stack.Screen
+					name="TicketChat"
+					options={{ headerShown: false }}
+					initialParams={{
+						teamArr, ticketArr, mainInfo, selTicketId,
+						setLoading: (loading) => setLoading(loading),
+						openTicketInfo,
+						resetSelTicketId: () => {
+							getTicketData();
+							setSelTicketId(0);
+						}
+					}}
+				/>
+				<Stack.Screen
+					name="TicketInfo"
+					options={{ headerShown: false }}
+					initialParams={{
+						ticketArr, mainInfo, selSystem, selTicketId
+					}}
+				/>
+
+				<Stack.Screen
+					name="ServiceMain"
+					options={{ headerShown: false }}
+					initialParams={{
+						setServiceKey: (serviceKey) => setServiceKey(serviceKey),
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="ServiceDetail"
+					options={{ headerShown: false }}
+					initialParams={{
+						serviceKey,
+						selSystem,
+						serviceCourseArr,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="ServiceCreate"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo,
+						selSystem,
+						setLoading: (loading) => setLoading(loading),
+						setError: (error) => setError(error)
+					}}
+				/>
+				<Stack.Screen
+					name="ComMain"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo,
+						comCustomerArr,
+						setSelCustomer,
+						setLogout
+					}}
+				/>
+				<Stack.Screen
+					name="ComPart"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo,
+						selCustomer,
+						setSelDate: (key, dateStr, timeStr) => setComSelDate(key, dateStr, timeStr)
+					}}
+				/>
+				<Stack.Screen
+					name="TechnicalMain"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo,
+						technicalArr,
+						setSelTechnical,
+						openProfile: () => setProfile(true)
+					}}
+				/>
+				<Stack.Screen
+					name="TechnicalPDF"
+					options={{ headerShown: false }}
+					initialParams={{
+						mainInfo,
+						selTechnical,
+						setSelTechnical,
+						openProfile: () => setProfile(true)
+					}}
 				/>
 			</Stack>
+      <LoadingComponent
+        loading={loading}
+      ></LoadingComponent>
 			<StatusBar style="auto" />
 		</ThemeProvider>
 	);

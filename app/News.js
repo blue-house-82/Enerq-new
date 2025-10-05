@@ -1,4 +1,5 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 
@@ -17,68 +18,87 @@ export const NewsCss = StyleSheet.create({
 	newsImg:{width:wholeWidth - 40, height:120, resizeMode:'contain', marginVertical:10}
 })
 
-export default class NewsComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {newsArr, mainInfo} = props;
-		this.state = {newsArr, mainInfo};
-	}
+export default function NewsComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		newsArr: initialNewsArr,
+		mainInfo: initialMainInfo,
+		setDetailKey
+	} = route.params || props;
 
-	componentDidMount() {
-	}
+	// Convert class state to useState hooks
+	const [newsArr, setNewsArr] = useState(initialNewsArr || []);
+	const [mainInfo, setMainInfo] = useState(initialMainInfo || {});
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['newsArr', 'mainInfo'].forEach(key => {// 'pageKey', 
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-			}
-		});
-	}
+	// Convert componentDidMount to useEffect
+	useEffect(() => {
+		// Component mounted - currently empty in original
+	}, []);
 
-	onClickModule = (detailKey) => {
-		this.props.setDetailKey(detailKey);
-		this.props.navigation.navigate('Detail');
-	}
+	// Convert componentWillReceiveProps to useEffect
+	useEffect(() => {
+		if (initialNewsArr !== undefined) {
+			setNewsArr(initialNewsArr);
+		}
+	}, [initialNewsArr]);
 
-	render() {
-		const {newsArr, mainInfo} = this.state;
-		return (
-			<View style={{...MainCss.backBoard}}>
-				<TopMenuComponent
-					label={'Enerq News'}
-					hideProfile={!(mainInfo&&mainInfo.first)}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
-				></TopMenuComponent>
-				<View style={{...MainCss.flex, width:wholeWidth, height:70}}>
-					<View style={{...NewsCss.iconLine}}></View>
-					<Image source={imgNews} style={{...NewsCss.topIcon}}></Image>
-					<View style={{...NewsCss.iconLine}}></View>
-				</View>
-				
-				<View style={{flex:1, flexGrow: 1, marginBottom:20}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
-					<ScrollView>
-						{newsArr.map((news, idx)=>
-							<View style={{...NewsCss.newsItem}} key={idx}>
-								<Text style={{...MainCss.label}}>{news.timeStr}</Text>
-								<Text style={{...MainCss.label, ...MainCss.title, color:red}}>{news.title}</Text>
-								{news.image !== '' &&
-									<Image style={{...NewsCss.newsImg}} source={{uri : apiUrl+'other/images/'+news.image+'.jpg'}} ></Image>
-								}
-								{news.image === '' &&
-									<Image style={{...NewsCss.newsImg}} source={imgEmptyNews} ></Image>
-								}
-								<RenderHtml
-								 	style={{...MainCss.label}}
-									contentWidth={wholeWidth}
-									source={{html:news.preViewStr}}
-								/>
-							</View>
-						)}
-						
-					</ScrollView>
-				</View>
+	useEffect(() => {
+		if (initialMainInfo !== undefined) {
+			setMainInfo(initialMainInfo);
+		}
+	}, [initialMainInfo]);
+
+	// Convert componentWillUnmount to useEffect cleanup
+	useEffect(() => {
+		return () => {
+			// componentWillUnmount logic here (currently empty)
+		};
+	}, []);
+
+	// Convert class methods to regular functions
+	const onClickModule = (detailKey) => {
+		setDetailKey && setDetailKey(detailKey);
+		navigation.navigate('Detail');
+	};
+
+	return (
+		<View style={{...MainCss.backBoard}}>
+			<TopMenuComponent
+				label={'Enerq News'}
+				hideProfile={!(mainInfo && mainInfo.first)}
+				openProfile={() => navigation.navigate('Profile')}
+				goBack={() => navigation.goBack()}
+			></TopMenuComponent>
+			<View style={{...MainCss.flex, width:wholeWidth, height:70}}>
+				<View style={{...NewsCss.iconLine}}></View>
+				<Image source={imgNews} style={{...NewsCss.topIcon}}></Image>
+				<View style={{...NewsCss.iconLine}}></View>
 			</View>
-		);
-	}
+			
+			<View style={{flex:1, flexGrow: 1, marginBottom:20}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
+				<ScrollView>
+					{newsArr.map((news, idx) =>
+						<View style={{...NewsCss.newsItem}} key={idx}>
+							<Text style={{...MainCss.label}}>{news.timeStr}</Text>
+							<Text style={{...MainCss.label, ...MainCss.title, color:red}}>{news.title}</Text>
+							{news.image !== '' &&
+								<Image style={{...NewsCss.newsImg}} source={{uri : apiUrl+'other/images/'+news.image+'.jpg'}} ></Image>
+							}
+							{news.image === '' &&
+								<Image style={{...NewsCss.newsImg}} source={imgEmptyNews} ></Image>
+							}
+							<RenderHtml
+								style={{...MainCss.label}}
+								contentWidth={wholeWidth}
+								source={{html:news.preViewStr}}
+							/>
+						</View>
+					)}
+				</ScrollView>
+			</View>
+		</View>
+	);
 }
