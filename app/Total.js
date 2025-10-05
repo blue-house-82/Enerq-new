@@ -1,15 +1,15 @@
-import React from 'react';
-import { Image, Text, View, ScrollView, StyleSheet, Animated} from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import TopMenuComponent from './pages/layout/TopMenu';
-import ModuleComponent from './pages/layout/Module';
+import { mainListArr } from './data/constant';
 import ListWrapper from './pages/layout/ListWrapper';
-import { mainListArr} from './data/constant';
+import ModuleComponent from './pages/layout/Module';
+import TopMenuComponent from './pages/layout/TopMenu';
 
-import { MainCss, red, white, wholeHeight, wholeWidth } from './assets/css';
+import { MainCss, white, wholeWidth } from './assets/css';
 
-import imgWeather from './assets/images/weather.png';
 import imgNews from './assets/images/news.png';
+import imgWeather from './assets/images/weather.png';
 // import imgTime from './assets/images/clock.png';
 import imgCheckBoxGreen from './assets/images/check-box-green.png';
 import { onTouchE, onTouchS } from './data/common';
@@ -29,41 +29,68 @@ export const footerArr = [
 	{img:imgNews, label:'Neuigkeiten', pageName:'News'},
 ]
 
-export default class TotalComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {pageKey, selSystem, unRead} = props;
-		const lastUpdateStr = selSystem.lastUpdate || 'Not updated yet';
-		this.labelWidth = lastUpdateStr.length*7.5;
-		this.labelLeft = new Animated.Value(0);
-		this.state = {pageKey, sideKey:'', partKey:'', selSystem, unRead, lastUpdateStr};
-	}
+export default function TotalComponent(props) {
+	const {pageKey, selSystem, unRead: propsUnRead} = props;
+	const initialLastUpdateStr = selSystem.lastUpdate || 'Not updated yet';
+	
+	const [state, setState] = useState({
+		pageKey, 
+		sideKey: '', 
+		partKey: '', 
+		selSystem, 
+		unRead: propsUnRead, 
+		lastUpdateStr: initialLastUpdateStr
+	});
+	
+	const labelWidth = useRef(initialLastUpdateStr.length * 7.5);
+	const labelLeft = useRef(new Animated.Value(0));
+	const animationTimeout = useRef(null);
 
-	componentDidMount() {
-		if (this.labelWidth > wholeWidth - 80) this.animateLabel();
-	}
+	useEffect(() => {
+		if (labelWidth.current > wholeWidth - 80) {
+			animateLabel();
+		}
+		
+		return () => {
+			if (animationTimeout.current) {
+				clearTimeout(animationTimeout.current);
+			}
+		};
+	}, []);
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['mainInfo', 'selSystem', 'unRead'].forEach(key => {// 'pageKey', 
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-				if (key==='selSystem') {
-					const lastUpdateStr = nextProps.selSystem.lastUpdate || 'Not updated yet';
-					this.setState({lastUpdateStr});
+	useEffect(() => {
+		['mainInfo', 'selSystem', 'unRead'].forEach(key => {
+			const propValue = key === 'unRead' ? propsUnRead : props[key];
+			if (state[key] !== propValue) {
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
+				if (key === 'selSystem') {
+					const lastUpdateStr = props.selSystem.lastUpdate || 'Not updated yet';
+					setState(prevState => ({
+						...prevState,
+						lastUpdateStr
+					}));
+					labelWidth.current = lastUpdateStr.length * 7.5;
 				}
 			}
 		});
-	}
+	}, [props.mainInfo, props.selSystem, propsUnRead]);
 
-	animateLabel = () => {
-		const leftEnd = (wholeWidth - 105) - this.labelWidth;
-		setTimeout(() => { Animated.timing(this.labelLeft, { toValue: leftEnd, duration: 3000, useNativeDriver: false }).start(); }, 2000);
-		setTimeout(() => { Animated.timing(this.labelLeft, { toValue: 0, 		duration: 500, useNativeDriver: false }).start(); }, 7000);
-		setTimeout(() => { this.animateLabel(); }, 8000);
-	}
+	const animateLabel = () => {
+		const leftEnd = (wholeWidth - 105) - labelWidth.current;
+		setTimeout(() => { 
+			Animated.timing(labelLeft.current, { toValue: leftEnd, duration: 3000, useNativeDriver: false }).start(); 
+		}, 2000);
+		setTimeout(() => { 
+			Animated.timing(labelLeft.current, { toValue: 0, duration: 500, useNativeDriver: false }).start(); 
+		}, 7000);
+		animationTimeout.current = setTimeout(() => { animateLabel(); }, 8000);
+	};
 
-	onClickPartItem = (partKey) => {
-		// this.props.setPartKey(partKey);
+	const onClickPartItem = (partKey) => {
+		// props.setPartKey(partKey);
 		var pageName;
 		if 		(partKey==='chart') { pageName = 'ChartFirst'; }
 		else if (partKey==='time') { pageName = 'Timeline'; }
@@ -71,32 +98,32 @@ export default class TotalComponent extends React.Component {
 		else if (partKey==='service') { pageName = 'ServiceMain'; }
 		else if (partKey==='bill') { pageName = 'InvoiceMain'; }
 		else if (partKey==='technical') { pageName = 'TechnicalMain'; }
-		if (pageName) this.props.navigation.navigate(pageName);
-	}
+		if (pageName) props.navigation.navigate(pageName);
+	};
 
-	onClickModule = (chartKey) => {
-		// this.props.setPartKey('chart');
-		this.props.setChartKey(chartKey);
-		this.props.navigation.navigate('ChartDetail');
-	}
+	const onClickModule = (chartKey) => {
+		// props.setPartKey('chart');
+		props.setChartKey(chartKey);
+		props.navigation.navigate('ChartDetail');
+	};
 
-	onClickFooter = (footerKey) => {
-		this.props.navigation.navigate(footerKey);
-	}
+	const onClickFooter = (footerKey) => {
+		props.navigation.navigate(footerKey);
+	};
 
-	render() {
-		const {selSystem} = this.props, {unRead, lastUpdateStr} = this.state;
-		return (
+	const { unRead, lastUpdateStr } = state;
+	
+	return (
 			<View style={{...MainCss.backBoard}}>
 				<TopMenuComponent
 					label={'Anlage '+selSystem.name}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>props.navigation.navigate('Profile')}
+					goBack={e=>props.navigation.goBack()}
 				></TopMenuComponent>
 					<ModuleComponent
 						moduleLabel='Dein Status.'
 						roleInfo={selSystem.roleInfo}
-						onClickModule={itemKey=>this.onClickModule(itemKey)}
+						onClickModule={itemKey=>onClickModule(itemKey)}
 					></ModuleComponent>
 					<Text style={{...MainCss.label, textAlign:'left', marginLeft:30}}>Dein nächster Schritt:</Text>
 					<View style={{...MainCss.flex, ...TotalCss.techPart}}>
@@ -106,7 +133,7 @@ export default class TotalComponent extends React.Component {
 						</View>
 						
 						<View style={{...TotalCss.techPartLabels, flexGrow: 1, flexDirection: 'row', zIndex:-1}}>
-							<Animated.View style={[{marginLeft:this.labelLeft, width:this.labelWidth}]}>
+							<Animated.View style={[{marginLeft:labelLeft.current, width:labelWidth.current}]}>
 								<Text style={{...MainCss.label}}>{lastUpdateStr}</Text>
 							</Animated.View>
 						</View>
@@ -117,34 +144,23 @@ export default class TotalComponent extends React.Component {
 						<ListWrapper
 							listArr={mainListArr}
 							unRead={unRead}
-							onClickListItem={itemKey=>this.onClickPartItem(itemKey)}
+							onClickListItem={itemKey=>onClickPartItem(itemKey)}
 						></ListWrapper>
 					</ScrollView>
 				</View>
-				<FooterComponent onClickFooter={footerKey=>this.props.navigation.navigate(footerKey)}></FooterComponent>
+				<FooterComponent onClickFooter={footerKey=>props.navigation.navigate(footerKey)}></FooterComponent>
 			</View>
 		);
-	}
 }
 
-export class FooterComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {};
-	}
-
-	componentDidMount() { }
-
-	UNSAFE_componentWillReceiveProps(nextProps) { }
-
-	render() {
-		return (
+export function FooterComponent(props) {
+	return (
 			<View style={{...MainCss.flex, ...TotalCss.footer}}>
 				{footerArr.map((item, idx)=>
 					<View
-						onTouchStart={e=>onTouchS(e, this) }
-						onTouchEnd={e =>onTouchE(e, this, 'totalBottom', item.pageName)}
-						style={{...MainCss.flexColumn, ...TotalCss.footerItem, borderRightWidth:idx===0?1:0, borderRightColor:'#C5C5C5', display:(this.props.type==='companyWorker'&&item.pageName==='Weather')?'none':'flex'}} key={idx}
+						onTouchStart={e=>onTouchS(e, {}) }
+						onTouchEnd={e =>onTouchE(e, {}, 'totalBottom', item.pageName)}
+						style={{...MainCss.flexColumn, ...TotalCss.footerItem, borderRightWidth:idx===0?1:0, borderRightColor:'#C5C5C5', display:(props.type==='companyWorker'&&item.pageName==='Weather')?'none':'flex'}} key={idx}
 					>
 						<Image source={item.img} style={{...TotalCss.footerImg, marginTop:20}}></Image>
 						<Text style={{...MainCss.label, marginBottom:10}}>{item.label}</Text>
@@ -152,5 +168,4 @@ export class FooterComponent extends React.Component {
 				)}
 			</View>
 		);
-	}
 }

@@ -1,19 +1,15 @@
 
 import React from 'react';
-import { Image, Text, View} from 'react-native';
+import { Image, Text, View } from 'react-native';
 
-import TopMenuComponent from './pages/layout/TopMenu';
-import ListWrapper from './pages/layout/ListWrapper';
-import { mainListArr, moduleArr } from './data/constant';
-import { GetSelItem, onTouchE, onTouchS } from './data/common';
 import { MainCss } from './assets/css';
+import { GetSelItem, onTouchE, onTouchS } from './data/common';
+import { mainListArr, moduleArr } from './data/constant';
+import ListWrapper from './pages/layout/ListWrapper';
+import TopMenuComponent from './pages/layout/TopMenu';
 
 import imgChartWhite from './assets/images/chart-white.png';
 import imgCheckBox from './assets/images/check-box.png';
-import imgBill from './assets/images/bill.png';
-import imgDoc from './assets/images/doc.png';
-import imgInfo from './assets/images/info.png';
-import imgService from './assets/images/service.png';
 
 const listChartArr = [
 	{key:'status', label:'Projektstatus', img:imgCheckBox},
@@ -29,6 +25,8 @@ export default class ChartMainComponent extends React.Component {
 	constructor(props) {
 		super(props);
 		const {chartKey} = props;
+		console.log("comeMain");
+		console.log(chartKey);
 		this.state = {selModule:GetSelItem(moduleArr, chartKey)};
 	}
 

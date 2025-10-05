@@ -15,8 +15,8 @@ const tabArr = [
 	{key:'kunde', label:'Kunde'},
 	{key:'team', label:'Team'},
 ]
-const testMode = false;
-const codeLength = 12, defaultEmail = testMode?'worker0@gmail.com':'', defaultPassd = testMode?'password0':'';
+const testMode = true;
+const codeLength = 12, defaultEmail = testMode?'123@123.ch':'', defaultPassd = testMode?'test':'', defaultCodeStr = testMode?"56RKUP6BL63S":"";
 
 export default function FirstComponent(props) {
 	const navigation = useNavigation();
@@ -141,7 +141,7 @@ export default function FirstComponent(props) {
 		let str = e;
 		if (key === 'codeStr') {
 			str = e.toUpperCase();
-			setCodeStr && setCodeStr(str);
+			setCodeStr(str);
 			setCodeStrState(str);
 		} else if (key === 'email') {
 			setEmail(str);
@@ -177,7 +177,7 @@ export default function FirstComponent(props) {
 			);
 			return;
 		}
-		propOnClickEmail && propOnClickEmail(email, passd);
+		propOnClickEmail(email, passd);
 	};
 
 	const onClickConfirm = () => {

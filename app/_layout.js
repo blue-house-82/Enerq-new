@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,12 +12,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import { GetIdStr, GetPreviewNews, GetRoleStrCustomer, GetTimeStr, SortComCustomArr, UpdateHtmlStr, parseApiData } from './data/common';
+import { apiUrl } from "./data/config";
 import { detailDataSource, moduleLabelArr, tempArrServiceCourse } from './data/constant';
 import { CreateNoteChannel } from "./data/pushNote";
 import LoadingComponent from "./Loading";
 
 // Constants
-const apiUrl = 'https://your-api-url.com/'; // Replace with your actual API URL
+// const apiUrl = 'https://your-api-url.com/'; // Replace with your actual API URL
 const appVerInstall = 1.01;
 const deviceTokenKey = 'deviceToken';
 const batteryKey = 'batteryKey';
@@ -25,16 +26,30 @@ const storageKey = 'qrCodeStorage';
 const workerInfoKey = 'workerInfo';
 
 const weekArr = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], monthArr = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-const test = false, skipWeather = false, skipToken = true, skipData = true, skipBattery = true; // Set to true for development
+const test = false, skipWeather = false, skipToken = true, skipData = false, skipBattery = true; // Set to true for development
 // const Stack = createNativeStackNavigator();
 var saveSelIdx = 0, saveSystemInfo = [];
 var loadStatus = {news:false, ticket:false, team:false, token:false};
 
-// Mock navigation ref for now (you'll need to implement proper navigation)
+
+// Navigation helper that uses Expo Router
 const navigationRef = {
   navigate: (routeName, params) => {
     console.log('Navigate to:', routeName, params);
-    // In a real app, you'd implement proper navigation here
+    try {
+      router.push(`/${routeName.toLowerCase()}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback - try with exact case
+      try {
+        router.push(`/${routeName}`);
+      } catch (fallbackError) {
+        console.error('Fallback navigation error:', fallbackError);
+      }
+    }
+  },
+  goBack: () => {
+    router.back();
   }
 };
 
@@ -180,10 +195,10 @@ export default function RootLayout() {
 		getTechnicalData();
 	}, [selSystem])
 	useEffect(() => {
-		if (selInvoice) navigationRef.navigate('InvoicePDF');
+		if (selInvoice) router.push('/InvoicePDF');
 	}, [selInvoice]);
 	useEffect(() => {
-		if (selTechnical) navigationRef.navigate('TechnicalPDF');
+		if (selTechnical) router.push('/TechnicalPDF');
 	}, [selTechnical]);
 
 	const setCustomerInfo = (mainInfo, newSystemInfo) => {
@@ -257,6 +272,7 @@ export default function RootLayout() {
 		loadStatus[key] = true;
 		if (loadStatus.news && loadStatus.team && loadStatus.token) {
 			setLoading(false);
+      // router.push('/Before');
 			AsyncStorage.getItem(workerInfoKey).then((str) => {
 				console.log('------      saved worker info      -------');
 				console.log(str);
@@ -264,17 +280,17 @@ export default function RootLayout() {
 					const workerInfo = JSON.parse(str);
 					onClickEmail(workerInfo.email, workerInfo.passd);
 				} else {
-					navigationRef.navigate('Before');
+					router.push('/Before');
 					AsyncStorage.getItem(storageKey).then((str) => {
 						console.log('------      saved qr-code      -------');
 						console.log(str);
 						if (str) {
 							setSelFirst('input');
 							setCodeStr(str);
-							navigationRef.navigate('Before');
+							router.push('/Before');
 							setTimeout(() => { onClickCode(true, str); }, 100);
 						} else {
-							navigationRef.navigate('Before');
+							router.push('/Before');
 						}
 					});
 				}
@@ -284,10 +300,13 @@ export default function RootLayout() {
 
 	const onClickCode = (loading, savedCode, type) => {
 		if (loading) setLoading(true);
+    console.log(codeStr);
 		var qrCodeStr = codeStr || savedCode;
 		if (type==='camera') qrCodeStr = savedCode;
+    console.log(qrCodeStr);
 		axios.post(`${apiUrl}mobile/login-custom.php`, {'passd': qrCodeStr, token}).then(response => {
 			const {success, mainInfo, systemInfo, serviceInfo, appVersion, updateSql} = response.data;
+      console.log(response.data);
 			if (appVerInstall < parseFloat(appVersion)) {
 				setVerNote(true);
 			} else if (success) {
@@ -314,7 +333,7 @@ export default function RootLayout() {
 				});
 				setServiceCourseArr(serviceArr); // tempArrServiceCourse
 				if (loading) {
-					navigationRef.navigate('First');
+					router.push('/First');
 					setCodeStr(qrCodeStr);
 					AsyncStorage.setItem( storageKey, qrCodeStr);
 					saveSelIdx = 0;
@@ -370,7 +389,7 @@ export default function RootLayout() {
 				const sortedArr = SortComCustomArr(serviceArr);
 				setComCustomerArr(sortedArr);
 				AsyncStorage.setItem( workerInfoKey, JSON.stringify({email, passd}));
-				navigationRef.navigate('ComMain');
+				router.push('/ComMain');
 			} else {
 				setError('Login failed!');
 			}
@@ -471,7 +490,7 @@ export default function RootLayout() {
 		setSelSystem({});
 		AsyncStorage.setItem( storageKey, '');
 		AsyncStorage.setItem( workerInfoKey, '');
-		setTimeout(() => { navigationRef.navigate('First'); }, 0);
+		setTimeout(() => { router.push('/First'); }, 0);
 	}
 
 	const setSelSystemIdx = (newIdx) => {
@@ -487,7 +506,7 @@ export default function RootLayout() {
 	}
 
 	const openTicketInfo = () => {
-		navigationRef.navigate('TicketInfo');
+		router.push('/TicketInfo');
 	}
 
 	return (
@@ -507,7 +526,8 @@ export default function RootLayout() {
 					options={{ headerShown: false }}
 					initialParams={{ 
 						test, codeStr, selIdx, selFirst, mainInfo, systemOptionArr, 
-						setCodeStr, setSelFirst, onClickCode, onClickEmail, setLoading,
+						setCodeStr, setSelFirst, onClickCode, setLoading,
+            onClickEmail:(email, passd) => onClickEmail(email, passd), 
 						showError: (error) => setError(error),
 						setSelSystemIdx: (newIdx) => {
 							saveSelIdx = newIdx;
@@ -516,7 +536,7 @@ export default function RootLayout() {
 					}}
 				/>
 
-				<Stack.Screen
+				{/* <Stack.Screen
 					name="QRScan"
 					options={{ headerShown: false }}
 					initialParams={{
@@ -525,7 +545,7 @@ export default function RootLayout() {
 							setTimeout(() => { onClickCode(true, str, 'camera') }, 100);
 						}
 					}}
-				/>
+				/> */}
 				<Stack.Screen
 					name="Total"
 					options={{ headerShown: false }}
@@ -646,7 +666,7 @@ export default function RootLayout() {
 						mainInfo, selSystem, ticketArr,
 						openDetailTicket: (ticketId) => {
 							setSelTicketId(ticketId);
-							setTimeout(() => { navigationRef.navigate('TicketChat'); }, 0);
+							setTimeout(() => { router.push('/TicketChat'); }, 0);
 						}
 					}}
 				/>
