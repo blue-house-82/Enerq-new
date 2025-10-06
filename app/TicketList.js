@@ -1,12 +1,11 @@
-import React from 'react';
-import axios from 'axios';
-import { Image, Text, View, ScrollView, StyleSheet} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { GetStatusLabel, onTouchE, onTouchS } from './data/common';
 import TopMenuComponent from './pages/layout/TopMenu';
-import { apiUrl } from './data/config';
-import { onTouchS, onTouchE, GetStatusLabel } from './data/common';
 
-import { MainCss, wholeWidth, red, wholeHeight, black, white } from './assets/css';
+import { black, MainCss, red, white, wholeWidth } from './assets/css';
 
 import imgClock from './assets/images/clock.png';
 import imgLock from './assets/images/lock-black.png';
@@ -24,42 +23,47 @@ const ListCss = StyleSheet.create({
 })
 
 
-export default class TicketListComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {ticketArr, mainInfo, selSystem} = props;
-		this.state = {ticketArr, mainInfo, selSystem};
+export default function TicketListComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	const { ticketArr: propTicketArr, mainInfo: propMainInfo, selSystem: propSelSystem, setDetailKey } = props;
+	
+	const [ticketArr, setTicketArr] = useState(propTicketArr || []);
+	const [mainInfo, setMainInfo] = useState(propMainInfo || null);
+	const [selSystem, setSelSystem] = useState(propSelSystem || null);
+
+	useEffect(() => {
+		// Component did mount logic here
+	}, []);
+
+	useEffect(() => {
+		if (propTicketArr !== ticketArr) {
+			setTicketArr(propTicketArr);
+		}
+		if (propMainInfo !== mainInfo) {
+			setMainInfo(propMainInfo);
+		}
+		if (propSelSystem !== selSystem) {
+			setSelSystem(propSelSystem);
+		}
+	}, [propTicketArr, propMainInfo, propSelSystem]);
+
+	const onClickModule = (detailKey) => {
+		if (setDetailKey) setDetailKey(detailKey);
+		navigation.navigate('Detail');
 	}
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['ticketArr', 'mainInfo', 'selSystem'].forEach(key => {// 'pageKey', 
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-			}
-		});
-	}
-
-	onClickModule = (detailKey) => {
-		this.props.setDetailKey(detailKey);
-		this.props.navigation.navigate('Detail');
-	}
-
-	getTicketArr = () => {
-		const {mainInfo, selSystem, ticketArr} = this.state;
+	const getTicketArr = () => {
 		if (!mainInfo || !selSystem) return [];
 		return ticketArr.filter(item=> {return item.customerId===mainInfo.id && item.systemId===selSystem.id});
 	}
 
-	render() {
-		return (
-			<View style={{...MainCss.backBoard}}>
+	return (
+		<View style={{...MainCss.backBoard}}>
 				<TopMenuComponent
 					label={'Support'}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...ListCss.redBar}}>
 					<Image style={{...MainCss.buttonIcon}} source={imgSupportWhite}></Image>
@@ -67,7 +71,7 @@ export default class TicketListComponent extends React.Component {
 				</View>
 				<View style={{flex:1, flexGrow: 1, marginBottom:20}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
 					<ScrollView>
-						{this.getTicketArr().map((ticket, idx)=>
+						{getTicketArr().map((ticket, idx)=>
 							<View style={{...ListCss.listItem}} key={idx}>
 								<View style={{...ListCss.listIcon}}>
 									<View style={{width:35, height:35}}>
@@ -80,8 +84,8 @@ export default class TicketListComponent extends React.Component {
 									</View>
 								</View>
 								<View style={{...ListCss.listTextWrapper}}
-									onTouchStart={e=>onTouchS(e, this)}
-									onTouchEnd={e=>onTouchE(e, this, 'openTicket', ticket.id)}
+									onTouchStart={e=>onTouchS(e)}
+									onTouchEnd={e=>onTouchE(e, null, 'openTicket', ticket.id)}
 								>
 									<View style={{...ListCss.listTextRow}}>
 										<Text style={{...MainCss.title, color:black}}>{ticket.title}</Text>
@@ -105,5 +109,4 @@ export default class TicketListComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

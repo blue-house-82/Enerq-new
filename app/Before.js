@@ -92,11 +92,7 @@ export default function BeforeComponent(props) {
 
     const onClickFooterBtn = (btnKey) => {
         if (btnKey === 'News') {
-            if (props.navigation) {
-                props.navigation.navigate(btnKey);
-            } else {
-                navigation.navigate(btnKey);
-            }
+            navigation.navigate(btnKey);
         } else if (btnKey === 'Info') {
             showInfoModal();
         }

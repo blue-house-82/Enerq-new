@@ -1,4 +1,5 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import TopMenuComponent from './pages/layout/TopMenu';
@@ -23,34 +24,54 @@ const WeatherCss = StyleSheet.create({
 	tempText:{color:red, textAlign:'right', fontWeight:700},
 })
 
-export default class WeatherComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {weatherArr, mainInfo} = props, {zip_code, location} = mainInfo;
-		this.state = {searchStr:zip_code+' '+location, weatherArr, mainInfo};
-	}
+export default function WeatherComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		weatherArr: initialWeatherArr,
+		mainInfo: initialMainInfo,
+		setDetailKey,
+		...otherProps
+	} = route.params || props;
+	
+	const { zip_code, location } = initialMainInfo || {};
+	const initialSearchStr = (zip_code && location) ? `${zip_code} ${location}` : '';
+	
+	const [state, setState] = useState({
+		searchStr: initialSearchStr,
+		weatherArr: initialWeatherArr || [],
+		mainInfo: initialMainInfo || {}
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['mainInfo', 'systemInfo', 'weatherArr', 'mainInfo'].forEach(key => {// 'pageKey', 
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-				if (key==='mainInfo') {
-					const {zip_code, location} = nextProps.mainInfo;
-					this.setState({searchStr:zip_code+' '+location});
+	useEffect(() => {
+		const currentParams = route.params || props;
+		['mainInfo', 'systemInfo', 'weatherArr'].forEach(key => {
+			const propValue = currentParams[key];
+			if (state[key] !== propValue && propValue !== undefined) {
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
+				if (key === 'mainInfo' && propValue) {
+					const { zip_code, location } = propValue;
+					const newSearchStr = (zip_code && location) ? `${zip_code} ${location}` : '';
+					setState(prevState => ({
+						...prevState,
+						searchStr: newSearchStr
+					}));
 				}
 			}
 		});
-	}
+	}, [route.params, props]);
 
-	onClickModule = (detailKey) => {
-		this.props.setDetailKey(detailKey);
-		this.props.navigation.navigate('Detail');
-	}
+	const onClickModule = (detailKey) => {
+		if (setDetailKey) setDetailKey(detailKey);
+		navigation.navigate('Detail');
+	};
 
-	getLabel = label => {
+	const getLabel = label => {
 		// if 		(status === 'clear-day') return 'Sonnig';
 		// else if (status === 'rain') return 'Regen';
 		// else if (status === 'cloudy') return 'Bewölkt';
@@ -70,9 +91,9 @@ export default class WeatherComponent extends React.Component {
 			newArr.push(firstLabel+otherLabel)
 		});
 		return newArr.join(' ');
-	}
+	};
 
-	getImg = label => {
+	const getImg = label => {
 		// if 		(status === 'clear-day') return imgSun;
 		// else if (status === 'rain') return imgCloudRain;
 		// else if (status === 'cloudy') return imgCloud;
@@ -91,16 +112,16 @@ export default class WeatherComponent extends React.Component {
 		else if (label==='leicht bewölkt') return imgSunCloud;
 		else if (label==='wolkig' || label==='bedeckt') return imgCloud;
 		else {console.log(label); return imgCloudSun;}
-	}
+	};
 
-	render() {
-		const {searchStr, weatherArr} = this.state;
-		return (
+	const {searchStr, weatherArr} = state;
+	
+	return (
 			<View style={{...MainCss.backBoard}}>
 				<TopMenuComponent
 					label={'Wetter'}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...MainCss.flex, width:wholeWidth, height:70}}>
 					<View style={{...NewsCss.iconLine}}></View>
@@ -121,9 +142,9 @@ export default class WeatherComponent extends React.Component {
 							<View style={{...WeatherCss.weatherItem, borderTopColor:idx===0?'#C5C5C5':white}} key={idx}>
 								<View style={{flex:1}}>
 									<Text style={{...MainCss.label, lineHeight:25}}>{item.date}</Text>
-									<Text style={{...MainCss.label, lineHeight:25, opacity:0.5}}>{this.getLabel(item.label)}</Text>
+									<Text style={{...MainCss.label, lineHeight:25, opacity:0.5}}>{getLabel(item.label)}</Text>
 								</View>
-								<Image style={{...WeatherCss.weatherImg}} source={this.getImg(item.label)}></Image>
+								<Image style={{...WeatherCss.weatherImg}} source={getImg(item.label)}></Image>
 								<View style={{marginLeft:20}}>
 									<Text style={{...WeatherCss.tempText}}>{item.high} °C</Text>
 									<Text style={{...WeatherCss.tempText, opacity:0.5}}>{item.low} °C</Text>
@@ -137,5 +158,4 @@ export default class WeatherComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

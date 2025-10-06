@@ -1,5 +1,6 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { MainCss, red, white, wholeHeight, wholeWidth } from './assets/css';
@@ -29,35 +30,51 @@ const ProfileCss = StyleSheet.create({
 	backImg:{width: 22, height:22, marginRight: 30},
 });
 
-export default class ProfileComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {profile, mainInfo} = props;
-		this.state = {profile, mainInfo, top:-wholeHeight};
-	}
+export default function ProfileComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		profile: initialProfile,
+		mainInfo: initialMainInfo,
+		setLoading,
+		setMainInfo,
+		...otherProps
+	} = route.params || props;
+	
+	const [state, setState] = useState({
+		profile: initialProfile,
+		mainInfo: initialMainInfo || {},
+		top: -wholeHeight
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
+	useEffect(() => {
+		const currentParams = route.params || props;
 		['profile', 'mainInfo'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				if (key==='profile') {
-					if (nextProps.profile===true) SetAnimate('top', -wholeHeight, 0, this);
-					else SetAnimate('top', 0, -wholeHeight, this);
-				} else if (key==='mainInfo') {
+			const propValue = currentParams[key];
+			if (state[key] !== propValue && propValue !== undefined) {
+				if (key === 'profile') {
+					if (propValue === true) {
+						SetAnimate('top', -wholeHeight, 0, { setState });
+					} else {
+						SetAnimate('top', 0, -wholeHeight, { setState });
+					}
 				}
-				this.setState({[key]:nextProps[key]});
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
 			}
 		});
-	}
+	}, [route.params, props]);
 
-	onClickListItem = (listKey) => {
-		if 		(listKey==='agb') this.props.navigation.navigate('AGB');
-		else if (listKey==='impress') this.props.navigation.navigate('Impress');
-	}
+	const onClickListItem = (listKey) => {
+		if 		(listKey==='agb') navigation.navigate('AGB');
+		else if (listKey==='impress') navigation.navigate('Impress');
+	};
 
-	selectFile = async() => {
+	const selectFile = async() => {
 		try {
 			const res = await DocumentPicker.pick({ type: ['image/*'], })
 			const fileInfo = res[0]
@@ -65,8 +82,8 @@ export default class ProfileComponent extends React.Component {
 			// {"fileCopyUri": null, "name": "IMG_20230309_024536.jpg", "size": 10593640, "type": "image/jpeg", "uri": "content://media/external/images/media/1463"}
 			const format = fileInfo.name.split('.').pop();
 			if (!format) return;
-			this.props.setLoading(true);
-			const formData = new FormData(), customerInfo = {...this.state.mainInfo};
+			if (setLoading) setLoading(true);
+			const formData = new FormData(), customerInfo = {...state.mainInfo};
 			formData.append("file", fileInfo);
 			formData.append("format", format);
 			formData.append("type", 'profile');
@@ -79,24 +96,24 @@ export default class ProfileComponent extends React.Component {
 				if (result.readyState === 4 && result.status === 200) {
 					const res = JSON.parse(result.responseText);
 					customerInfo.image = res.file_name;
-					this.props.setMainInfo(customerInfo);
-					this.props.setLoading(false);
+					if (setMainInfo) setMainInfo(customerInfo);
+					if (setLoading) setLoading(false);
 				}
 			};
 			xhttp.send(formData);
 		} catch (err) {
 			if (DocumentPicker.isCancel(err)) { } else {  }
 		}
-	}
+	};
 
-	render() {
-		const {mainInfo} = this.state;
-		return (
+	const {mainInfo} = state;
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label='Dein Account'
 					hideProfile={true}
-					goBack={e=>this.props.navigation.goBack()}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...MainCss.flexColumn, ...ProfileCss.avatar}}>
 					<View style={{...ProfileCss.avatarImgWrapper}}>
@@ -107,7 +124,7 @@ export default class ProfileComponent extends React.Component {
 							<Image style={{...ProfileCss.avatarImg}} source={imgAvatarBig}></Image>
 						}
 						
-						<TouchableOpacity style={{...MainCss.flex, height:27, width:27, position:'absolute', top:95, left:95}} onPress={e=>this.selectFile()}>
+						<TouchableOpacity style={{...MainCss.flex, height:27, width:27, position:'absolute', top:95, left:95}} onPress={e=>selectFile()}>
 							<Image source={imgAvatarSetting} style={{width:27, height:27, resizeMode:'cover'}}></Image>
 						</TouchableOpacity>
 					</View>
@@ -116,18 +133,17 @@ export default class ProfileComponent extends React.Component {
 				<View style={{height:300}}>
 					<ListWrapper
 						listArr={listArr}
-						onClickListItem={listKey=>this.onClickListItem(listKey)}
+						onClickListItem={listKey=>onClickListItem(listKey)}
 					></ListWrapper>
 				</View>
 				
 				<View
-					onTouchStart={e=> onTouchS(e, this)}
-					onTouchEnd={e => onTouchE(e, this, 'logout') }
+					onTouchStart={e=> onTouchS(e, { setState })}
+					onTouchEnd={e => onTouchE(e, { setState }, 'logout') }
 					style={{...MainCss.flex, ...ProfileCss.back}}>
 					<Image source={imgExit} style={{...ProfileCss.backImg}}></Image>
 					<Text style={{...MainCss.title, color:white}}>Abmelden</Text>
 				</View>
 			</View>
 		);
-	}
 }

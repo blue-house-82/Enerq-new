@@ -1,6 +1,7 @@
-import React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // import SelectDropdown from 'react-native-select-dropdown';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import CalendarPicker from 'react-native-calendar-picker';
 
 import { MainCss, black, grey, red, white, whiteGrey, wholeHeight, wholeWidth } from './assets/css';
@@ -10,11 +11,11 @@ import imgCheckBoxGreen from './assets/images/check-box-green.png';
 import imgClockWhite from './assets/images/clock-white.png';
 import imgHome from './assets/images/home.png';
 
-import { Get2Digits, GetTimeLabel, GetTimeStrInfo, timeAnimate } from './data/common';
+import { ComMainCss } from './ComMain';
+import { Get2Digits, GetTimeLabel, GetTimeStrInfo } from './data/common';
 import { moduleArr } from './data/constant';
 import { ListsCss } from './pages/layout/ListWrapper';
 import RoundIconBtn from './pages/layout/RoundIconBtn';
-import { ComMainCss } from './ComMain';
 
 const heightTime = 600, hourStrArr = [], minStrArr = [];
 
@@ -44,90 +45,130 @@ function getTimeIdx(timeStr) {
 	return {hourIdx:parseInt(timeArr[0]), minIdx:parseInt(timeArr[1])};
 }
 
-export default class ComPartComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {selCustomer, mainInfo} = props, {timeStr, dateStr} = selCustomer;
-		const {hourIdx, minIdx} = getTimeIdx(timeStr);
-		this.bottomTime = new Animated.Value(-heightTime);
-		
-		const selDate = dateStr+'T'+'00:00'+':00.000Z';
-		this.state = {selCustomer, mainInfo, selModule:moduleArr[0].key, typeIdx:0, modal:false, hourIdx, minIdx, selDate};
-	}
+export default function ComPartComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		selCustomer: initialSelCustomer,
+		mainInfo: initialMainInfo,
+		setSelDate,
+		...otherProps
+	} = route.params || props;
+	
+	const { timeStr: initialTimeStr, dateStr: initialDateStr } = initialSelCustomer || {};
+	const { hourIdx: initialHourIdx, minIdx: initialMinIdx } = getTimeIdx(initialTimeStr);
+	const bottomTime = useRef(new Animated.Value(-heightTime));
+	
+	const initialSelDate = initialDateStr ? initialDateStr + 'T' + '00:00' + ':00.000Z' : '';
+	
+	const [state, setState] = useState({
+		selCustomer: initialSelCustomer,
+		mainInfo: initialMainInfo || {},
+		selModule: moduleArr[0].key,
+		typeIdx: 0,
+		modal: false,
+		hourIdx: initialHourIdx,
+		minIdx: initialMinIdx,
+		selDate: initialSelDate
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
+	useEffect(() => {
+		const currentParams = route.params || props;
 		['selCustomer', 'mainInfo'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-				if (key==='selCustomer') {
-					if (nextProps.selCustomer) {
-						const {dateStr, timeStr} = nextProps.selCustomer;
-						const {hourIdx, minIdx} = getTimeIdx(timeStr);
-						this.setState({selDate:dateStr+'T'+'00:00'+':00.000Z', hourIdx, minIdx})
-					}
+			const propValue = currentParams[key];
+			if (state[key] !== propValue && propValue !== undefined) {
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
+				
+				if (key === 'selCustomer' && propValue) {
+					const { dateStr, timeStr } = propValue;
+					const { hourIdx, minIdx } = getTimeIdx(timeStr);
+					setState(prevState => ({
+						...prevState,
+						selDate: dateStr ? dateStr + 'T' + '00:00' + ':00.000Z' : '',
+						hourIdx,
+						minIdx
+					}));
 				}
 			}
 		});
-	}
+	}, [route.params, props]);
 
-	onClickModule = (itemKey) => {
-		this.setState({selModule:itemKey});
-	}
+	const onClickModule = (itemKey) => {
+		setState(prevState => ({
+			...prevState,
+			selModule: itemKey
+		}));
+	};
 
-	getModuleLabel = () => {
-		const selModule = moduleArr.find(item=>{return item.key===this.state.selModule});
+	const getModuleLabel = () => {
+		const selModule = moduleArr.find(item => item.key === state.selModule);
 		if (selModule) return selModule.label;
 		else return '';
-	}
+	};
 
-	setTypeIdx = (idx) => {
-		this.setState({typeIdx:idx});
-	}
+	const setTypeIdx = (idx) => {
+		setState(prevState => ({
+			...prevState,
+			typeIdx: idx
+		}));
+	};
 
-	onClickTimeButton = () => {
+	const onClickTimeButton = () => {
 		const phoneNumber = '+41794742558';
 		Linking.openURL(`tel:${phoneNumber}`);
-		// this.setState({modal:true})
-		// Animated.timing(this.bottomTime, { toValue: 0, duration: 500, useNativeDriver: false }).start();
-	}
+		// setState(prevState => ({ ...prevState, modal: true }));
+		// Animated.timing(bottomTime.current, { toValue: 0, duration: 500, useNativeDriver: false }).start();
+	};
 
-	onClickSettingButton = () => {
+	const onClickSettingButton = () => {
 
-	}
+	};
 
-	callPhone = () => {
+	const callPhone = () => {
 		const phoneNumber = '+41415158888';
 		Linking.openURL(`tel:${phoneNumber}`);
-	}
+	};
 
-	hideModal = () => {
+	const hideModal = () => {
 		const timeAnimate = 500;
-		Animated.timing(this.bottomTime, { toValue: -heightTime, duration: timeAnimate, useNativeDriver: false }).start();
-		setTimeout(() => { this.setState({modal:false}); }, timeAnimate);
-	}
+		Animated.timing(bottomTime.current, { toValue: -heightTime, duration: timeAnimate, useNativeDriver: false }).start();
+		setTimeout(() => { 
+			setState(prevState => ({ ...prevState, modal: false })); 
+		}, timeAnimate);
+	};
 
-	submitTime = () => {
-		const {selDate, hourIdx, minIdx, selCustomer} = this.state, {key} = selCustomer; // 2023-08-10T04:00
+	const submitTime = () => {
+		const { selDate, hourIdx, minIdx, selCustomer } = state;
+		const { key } = selCustomer || {};
 		const newDateInfo = GetTimeStrInfo(new Date(selDate));
-		// console.log(newDateInfo.dateStr); // .substring(10)
 		const hourStr = Get2Digits(hourIdx), minStr = Get2Digits(minIdx);
-		this.props.setSelDate(key, newDateInfo.dateStr, hourStr+':'+minStr);
-		Animated.timing(this.bottomTime, { toValue: -heightTime, duration: timeAnimate, useNativeDriver: false }).start();
-		setTimeout(() => { this.setState({modal:false}); }, timeAnimate);
-	}
+		
+		if (setSelDate) {
+			setSelDate(key, newDateInfo.dateStr, hourStr + ':' + minStr);
+		}
+		
+		const timeAnimate = 500;
+		Animated.timing(bottomTime.current, { toValue: -heightTime, duration: timeAnimate, useNativeDriver: false }).start();
+		setTimeout(() => { 
+			setState(prevState => ({ ...prevState, modal: false })); 
+		}, timeAnimate);
+	};
 
-	render() {
-		const {selModule, mainInfo, typeIdx, hourIdx, minIdx, modal, selCustomer} = this.state, {} = this.props, {key, name, location, dateStr, timeStr, mainKey, fieldLabel} = selCustomer;
-		const comName = mainInfo?mainInfo.first+' '+mainInfo.last:'';
-		return (
+	const { selModule, mainInfo, typeIdx, hourIdx, minIdx, modal, selCustomer } = state;
+	const { key, name, location, dateStr, timeStr, mainKey, fieldLabel } = selCustomer || {};
+	const comName = mainInfo ? mainInfo.first + ' ' + mainInfo.last : '';
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label={'Hallo '+comName}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{width:wholeWidth, backgroundColor:whiteGrey, height:2}}></View>
 				<View style={{...ListsCss.listItem}}>
@@ -146,7 +187,7 @@ export default class ComPartComponent extends React.Component {
 						</View>
 					)}
 				</View>
-				<Text style={{...MainCss.label, fontSize:20, marginVertical:6}}>{this.getModuleLabel()}</Text>
+				<Text style={{...MainCss.label, fontSize:20, marginVertical:6}}>{getModuleLabel()}</Text>
 				<View style={{...MainCss.flexColumn, width:wholeWidth, paddingVertical:20, paddingHorizontal:15, borderTopColor:'#C5C5C5', borderTopWidth:2, borderBottomColor:'#C5C5C5', borderBottomWidth:2, flex:1}}>
 					<View style={{width:'100%'}}>
 						<Text style={{...ComMainCss.label, marginBottom:5, marginLeft:10}}>Terminart:</Text>
@@ -170,7 +211,7 @@ export default class ComPartComponent extends React.Component {
 						<RoundIconBtn
 							img={imgClockWhite}
 							label='Termin ändern'
-							onClick={e=>this.onClickTimeButton()}
+							onClick={e=>onClickTimeButton()}
 						></RoundIconBtn>
 					</View>
 					{/* <RoundIconBtn
@@ -191,9 +232,9 @@ export default class ComPartComponent extends React.Component {
 					</TouchableOpacity>
 					<Text style={{...MainCss.label, marginBottom:10}}>petermueller@sunrise.ch</Text> */}
 				</View>
-				<TouchableOpacity style={{position:'absolute', width:wholeWidth, height:modal?wholeHeight:0, left:0, top:0, backgroundColor:'#FFFFFFCC'}} onPress={e=>this.hideModal()}></TouchableOpacity>
-				<Animated.View style={[{position:'absolute', width:wholeWidth, height:heightTime, backgroundColor:white, bottom:this.bottomTime}]}>
-					<TouchableOpacity style={{...MainCss.flex, width:wholeWidth, height:55, backgroundColor:red, marginBottom:10}} onPress={e=>this.hideModal()}>
+				<TouchableOpacity style={{position:'absolute', width:wholeWidth, height:modal?wholeHeight:0, left:0, top:0, backgroundColor:'#FFFFFFCC'}} onPress={e=>hideModal()}></TouchableOpacity>
+				<Animated.View style={[{position:'absolute', width:wholeWidth, height:heightTime, backgroundColor:white, bottom:bottomTime.current}]}>
+					<TouchableOpacity style={{...MainCss.flex, width:wholeWidth, height:55, backgroundColor:red, marginBottom:10}} onPress={e=>hideModal()}>
 						<Text style={{...MainCss.label, color:white}}>Termin für Dachaufmass u. Dachkontrolle:</Text>
 					</TouchableOpacity>
 					<CalendarPicker
@@ -221,8 +262,8 @@ export default class ComPartComponent extends React.Component {
 						// maxDate={todayStr}
 						onDateChange={date=>{
 							// "2023-08-10T04:00:00.000Z"
-							// this.changeTime(date, 'date');
-							this.setState({ selDate: date, });
+							// changeTime(date, 'date');
+							setState(prevState => ({ ...prevState, selDate: date }));
 						}}
 					/>
 					<View style={{...MainCss.flexColumn, width:wholeWidth, paddingVertical:20, borderTopWidth:1, borderTopColor:grey, borderBottomWidth:1, borderBottomColor:grey}}>
@@ -248,12 +289,11 @@ export default class ComPartComponent extends React.Component {
 						</View>
 					</View>
 					<View style={{...MainCss.flex, flex:1}}>
-						<TouchableOpacity style={{...MainCss.button, marginBottom:8}} onPress={e=>this.submitTime()}>
+						<TouchableOpacity style={{...MainCss.button, marginBottom:8}} onPress={e=>submitTime()}>
 							<Text style={{...MainCss.buttonLabel}}>Weiter</Text>
 						</TouchableOpacity>
 					</View>
 				</Animated.View>
 			</View>
 		);
-	}
 }

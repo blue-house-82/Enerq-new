@@ -1,4 +1,5 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 // import Pdf from 'react-native-pdf';
 
@@ -11,32 +12,28 @@ const PDFCss = StyleSheet.create({
 	doc:{width:wholeWidth, height:wholeHeight-100},
 });
 
-export default class TechnicalPDFComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {selTechnical} = props;
-		this.state = {selTechnical};
-	}
+export default function TechnicalPDFComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	const { selTechnical, setSelTechnical } = props;
+	
+	const [selTechnicalState, setSelTechnicalState] = useState(selTechnical || null);
 
-	componentDidMount() {
-	}
+	useEffect(() => {
+		// Component did mount logic here
+	}, []);
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		[].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
+	useEffect(() => {
+		return () => {
+			// Component will unmount
+			if (setSelTechnical) {
+				setSelTechnical(null);
 			}
-		});
-	}
+		};
+	}, [setSelTechnical]);
 
-	componentWillUnmount() {
-		this.props.setSelTechnical(null);
-	}
-
-	render() {
-		const {selTechnical} = this.props;
-		const tempPDF = 'http://samples.leanpub.com/thereactnativebook-sample.pdf';
-		const realPDF = serverUrl+'other/technical_pdf/'+selTechnical+'.pdf';
+	const tempPDF = 'http://samples.leanpub.com/thereactnativebook-sample.pdf';
+	const realPDF = serverUrl+'other/technical_pdf/'+selTechnical+'.pdf';
 		const source = { uri: realPDF, cache: true };
         //const source = require('./test.pdf');  // ios only
         //const source = {uri:'bundle-assets://test.pdf' };
@@ -49,8 +46,8 @@ export default class TechnicalPDFComponent extends React.Component {
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label='Rechnungen der Anlage'
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...MainCss.flex}}>
 					{/* <Pdf
@@ -62,8 +59,7 @@ export default class TechnicalPDFComponent extends React.Component {
 						onPressLink={(uri) => { console.log(`Link pressed: ${uri}`); }}
 						style={{...PDFCss.doc}}/> */}
 				</View>
-				{/* <FooterComponent onClickFooter={footerKey=>this.props.navigation.navigate(footerKey)}></FooterComponent> */}
+				{/* <FooterComponent onClickFooter={footerKey=>navigation.navigate(footerKey)}></FooterComponent> */}
 			</View>
 		);
-	}
 }

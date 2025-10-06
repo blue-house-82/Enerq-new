@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useRef, useState } from 'react';
+import { Image, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import TopMenuComponent from './pages/layout/TopMenu';
 
-import { MainCss, black, grey, red, wholeWidth } from './assets/css';
-import imgSupport from './assets/images/support.png';
+import { MainCss, black, grey, wholeWidth } from './assets/css';
 import imgInfoRed from './assets/images/info-red.png';
-import imgAttachRed from './assets/images/attach-red.png';
+import imgSupport from './assets/images/support.png';
 import { GetTimeStr } from './data/common';
 
 const InfoCss = StyleSheet.create({
@@ -20,36 +20,45 @@ function GetTicketInfo(ticketArr, selTicketId) {
 	} else return {};
 }
 
-export default class TicketInfoComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {mainInfo, ticketArr, selTicketId, selSystem} = props;
-		this.ticketInfo = GetTicketInfo(ticketArr, selTicketId);
-		this.state = {mainInfo, ticketArr, selTicketId, selSystem};
-	}
+export default function TicketInfoComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	const { mainInfo: propMainInfo, ticketArr: propTicketArr, selTicketId: propSelTicketId, selSystem: propSelSystem } = props;
+	
+	const ticketInfoRef = useRef(GetTicketInfo(propTicketArr, propSelTicketId));
+	
+	const [mainInfo, setMainInfo] = useState(propMainInfo || null);
+	const [ticketArr, setTicketArr] = useState(propTicketArr || []);
+	const [selTicketId, setSelTicketId] = useState(propSelTicketId || null);
+	const [selSystem, setSelSystem] = useState(propSelSystem || null);
 
-	componentDidMount() {
-	}
+	useEffect(() => {
+		// Component did mount logic here
+	}, []);
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['mainInfo', 'ticketArr', 'selTicketId', 'selSystem'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				if (key==='selTicketId') {
-					this.ticketInfo = GetTicketInfo(this.state.ticketArr, nextProps.selTicketId);
-				}
-				this.setState({[key]:nextProps[key]})
-			}
-		});
-	}
+	useEffect(() => {
+		if (propMainInfo !== mainInfo) {
+			setMainInfo(propMainInfo);
+		}
+		if (propTicketArr !== ticketArr) {
+			setTicketArr(propTicketArr);
+		}
+		if (propSelTicketId !== selTicketId) {
+			setSelTicketId(propSelTicketId);
+			ticketInfoRef.current = GetTicketInfo(ticketArr, propSelTicketId);
+		}
+		if (propSelSystem !== selSystem) {
+			setSelSystem(propSelSystem);
+		}
+	}, [propMainInfo, propTicketArr, propSelTicketId, propSelSystem]);
 
-	render() {
-		const {selSystem} = this.state, {number, category, lastTime} = this.ticketInfo;
+	const {number, category, lastTime} = ticketInfoRef.current;
 		return (
 			<SafeAreaView style={{...MainCss.backBoard, ...MainCss.flexColumn, height:'100%'}}>
 				<TopMenuComponent
 					label={'Chat-Support'}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{borderTopColor:grey, borderTopWidth:2, width:wholeWidth, marginBottom:20}}></View>
 				<Image source={imgInfoRed} style={{...MainCss.buttonIcon}}></Image>
@@ -96,5 +105,4 @@ export default class TicketInfoComponent extends React.Component {
 				</View> */}
 			</SafeAreaView>
 		);
-	}
 }

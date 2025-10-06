@@ -1,4 +1,5 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { grey, MainCss, red, wholeWidth } from './assets/css';
@@ -15,32 +16,29 @@ const pName = wName * wTotal - tdPaddingLeft,
 	pTime = wTime * wTotal - tdPaddingLeft,
 	pPaid = wPaid * wTotal;
 
-export default class TechnicalMainComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {technicalArr} = props;
-		this.state = {technicalArr};
-	}
+export default function TechnicalMainComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	const { technicalArr: propTechnicalArr, setSelTechnical } = props;
+	
+	const [technicalArr, setTechnicalArr] = useState(propTechnicalArr || []);
 
-	componentDidMount() {
-	}
+	useEffect(() => {
+		// Component did mount logic here
+	}, []);
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['technicalArr'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-			}
-		});
-	}
+	useEffect(() => {
+		if (propTechnicalArr !== technicalArr) {
+			setTechnicalArr(propTechnicalArr || []);
+		}
+	}, [propTechnicalArr]);
 
-	render() {
-		const {technicalArr} = this.state;
-		return (
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label='Rechnungen der Anlage'
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...MainCss.flex, width:wholeWidth, marginTop:45, marginBottom:50}}>
 					<Image source={imgDoc} style={{width:55, height:70, resizeMode:'contain', opacity:0.5}}></Image>
@@ -56,7 +54,7 @@ export default class TechnicalMainComponent extends React.Component {
 						{technicalArr.map((item, idx)=>
 							<View style={{...MainCss.flex, width:wholeWidth, height:50, borderBottomColor:grey, borderBottomWidth:idx===technicalArr.length-1?1:0 }} key={idx}>
 								<View style={{width:pName, ...InvoiceMainCss.borderRight}}>
-									<TouchableOpacity onPress={e=>this.props.setSelTechnical(item.realName)}>{/*  openInvoicePDF*/}
+									<TouchableOpacity onPress={e=>setSelTechnical && setSelTechnical(item.realName)}>{/*  openInvoicePDF*/}
 										<Text style={{...MainCss.label, color:red, textDecorationLine:'underline'}}>{item.name+'.pdf'}</Text>
 									</TouchableOpacity>
 								</View>
@@ -80,5 +78,4 @@ export default class TechnicalMainComponent extends React.Component {
 				</View> */}
 			</View>
 		);
-	}
 }

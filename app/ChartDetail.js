@@ -1,10 +1,11 @@
-import React from 'react';
-import { Image, Text, View, ScrollView, StyleSheet, TouchableOpacity} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useRef, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import TopMenuComponent from './pages/layout/TopMenu';
-import { moduleArr } from './data/constant';
+import { green, grey, MainCss, ModalCss, red, white, wholeWidth } from './assets/css';
 import { GetSelItem, onTouchE, onTouchS } from './data/common';
-import { MainCss, wholeWidth, red, green, grey, white, wholeHeight, ModalCss } from './assets/css';
+import { moduleArr } from './data/constant';
+import TopMenuComponent from './pages/layout/TopMenu';
 
 import imgCheck from './assets/images/check.png';
 import imgClose from './assets/images/close.png';
@@ -41,70 +42,106 @@ const DetailCss = StyleSheet.create({
 	checkLabel:{marginLeft:10, marginRight:10, marginTop:0}
 })
 
-export default class ChartDetailComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {chartKey, moduleInfo} = props, selItem = GetSelItem(moduleArr, chartKey);
-		this.moduleData = moduleInfo;
-		const {build, mat} = GetBuildMatData(chartKey, this.moduleData);
-		this.state = {selTab:tabArr[0].key, chartKey, build, mat, selItem};
-	}
+export default function ChartDetailComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		chartKey: initialChartKey,
+		moduleInfo: initialModuleInfo,
+		...otherProps
+	} = route.params || props;
+	
+	const moduleData = useRef(initialModuleInfo);
+	const initialSelItem = GetSelItem(moduleArr, initialChartKey);
+	const initialBuildMat = GetBuildMatData(initialChartKey, moduleData.current);
+	
+	const [state, setState] = useState({
+		selTab: tabArr[0].key,
+		chartKey: initialChartKey,
+		build: initialBuildMat.build || [],
+		mat: initialBuildMat.mat || [],
+		selItem: initialSelItem,
+		modalImg: false
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		this.moduleData = nextProps.moduleInfo;
+	useEffect(() => {
+		const currentParams = route.params || props;
+		moduleData.current = currentParams.moduleInfo;
+		
 		['chartKey', 'moduleInfo'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]})
-				if (nextProps.chartKey) {
-					const selItem = GetSelItem(moduleArr, nextProps.chartKey);
-					const {build, mat} = GetBuildMatData(nextProps.chartKey, this.moduleData);
-					this.setState({build, mat, selItem});
-				}
-				if (key==='chartkey') {
-					this.setState({selTab:tabArr[0].key});
+			const propValue = currentParams[key];
+			if (state[key] !== propValue && propValue !== undefined) {
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
+				
+				if (key === 'chartKey' && propValue) {
+					const selItem = GetSelItem(moduleArr, propValue);
+					const {build, mat} = GetBuildMatData(propValue, moduleData.current);
+					setState(prevState => ({
+						...prevState,
+						build: build || [],
+						mat: mat || [],
+						selItem,
+						selTab: tabArr[0].key
+					}));
 				}
 			}
 		});
-	}
+	}, [route.params, props]);
 
-	onClickTab = (tabKey) => {
-		this.setState({selTab:tabKey})
-	}
+	const onClickTab = (tabKey) => {
+		setState(prevState => ({
+			...prevState,
+			selTab: tabKey
+		}));
+	};
 
-	onClickCheckBox = (idx) => {
-		const {selTab, chartKey} = this.state, selTabArrKey = selTab+'Arr';
-		const selTabInfo = this.state[selTabArrKey];
+	const onClickCheckBox = (idx) => {
+		const {selTab, chartKey} = state;
+		const selTabArrKey = selTab + 'Arr';
+		const selTabInfo = [...state[selTab]];
 		const oldValue = selTabInfo[idx].value;
-		selTabInfo[idx].value = oldValue==='check'?'uncheck':'check';
-		this.setState({[selTabArrKey]:selTabInfo});
-		this.moduleData[chartKey][selTabArrKey] = selTabInfo;
-	}
+		selTabInfo[idx].value = oldValue === 'check' ? 'uncheck' : 'check';
+		
+		setState(prevState => ({
+			...prevState,
+			[selTab]: selTabInfo
+		}));
+		
+		if (moduleData.current && moduleData.current[chartKey]) {
+			moduleData.current[chartKey][selTabArrKey] = selTabInfo;
+		}
+	};
 
-	closeImageModal = () => {
-		this.setState({modalImg:false});
-	}
+	const closeImageModal = () => {
+		setState(prevState => ({
+			...prevState,
+			modalImg: false
+		}));
+	};
 
-	render() {
-		const {selItem, selTab, modalImg} = this.state;
-		return (
+	const {selItem, selTab, modalImg} = state;
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
-					label={selItem.label}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					label={selItem?.label || ''}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...DetailCss.topPart}}>
-					<Image source={selItem.imgBlack || imgCheck} style={{...MainCss.icon, ...DetailCss.topImg}}></Image>
-					<Text style={{...MainCss.label}}>{selItem.label}</Text>
+					<Image source={selItem?.imgBlack || imgCheck} style={{...MainCss.icon, ...DetailCss.topImg}}></Image>
+					<Text style={{...MainCss.label}}>{selItem?.label || ''}</Text>
 				</View>
 				<View style={{...DetailCss.tabWrapper}}>
 					{tabArr.map((item, idx)=>
 						<View
-							onTouchStart={e=>onTouchS(e, this) }
-							onTouchEnd={e => onTouchE(e, this, 'chartTab', item.key) }
+							onTouchStart={e=>onTouchS(e, { setState }) }
+							onTouchEnd={e => onTouchE(e, { setState }, 'chartTab', item.key) }
 							style={{...MainCss.flex, ...DetailCss.tabItem, opacity:item.key===selTab?1:0.5}} key={idx}>
 							<Text style={{...MainCss.title, color:white}}>{item.label}</Text>
 						</View>
@@ -112,7 +149,7 @@ export default class ChartDetailComponent extends React.Component {
 				</View>
 				<View style={{flex:1, flexGrow:1, marginTop:5}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
 					<ScrollView>
-						{this.state[selTab].map((item, idx)=>
+						{state[selTab].map((item, idx)=>
 							<View style={{...DetailCss.checkRow}} key={idx}>
 								<View style={{...MainCss.flex, ...DetailCss.checkBox, borderColor:GetCheckBorderCol(item.value)}}>{/* onPress={e=>this.onClickCheckBox(idx)} */}
 									{item.value==='check' && <Image source={imgCheck} style={{...DetailCss.checkImg}}></Image>}
@@ -139,7 +176,7 @@ export default class ChartDetailComponent extends React.Component {
 
 								<View style={{display:'flex', flexDirection:'row', alignItems:'center', width:30, height:30, marginLeft:5}}>
 									{item.img !== undefined &&
-										<TouchableOpacity onPress={e=>{this.setState({modalImg:item.img}); console.log(item.img)}} style={{width:30, height:30}}>
+										<TouchableOpacity onPress={e=>{setState(prev => ({...prev, modalImg: item.img})); console.log(item.img)}} style={{width:30, height:30}}>
 											<Image source={{uri : apiUrl+'other/check_images/'+item.img+'.jpg'}} style={{width:'100%', height:'100%', resizeMode:'contain'}}></Image>
 										</TouchableOpacity>
 									}
@@ -152,7 +189,7 @@ export default class ChartDetailComponent extends React.Component {
 					<View style={{...ModalCss.back}}>
 						<View style={{...ModalCss.wrapper, height:560}}>
 							<Image source={{uri : apiUrl+'other/check_images/'+modalImg+'.jpg'}} style={{...ModalCss.image}}></Image>
-							<TouchableOpacity style={{...ModalCss.close}} onPress={e=>this.closeImageModal()}>
+							<TouchableOpacity style={{...ModalCss.close}} onPress={e=>closeImageModal()}>
 								<Image source={imgClose} style={{...ModalCss.closeImg}}></Image>
 							</TouchableOpacity>
 						</View>
@@ -161,5 +198,4 @@ export default class ChartDetailComponent extends React.Component {
 			</View>
 				
 		);
-	}
 }

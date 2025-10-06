@@ -1,5 +1,6 @@
 
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { Image, Text, View } from 'react-native';
 
 import { MainCss } from './assets/css';
@@ -21,43 +22,58 @@ const listChartArr = [
 
 const selPart = mainListArr[0];
 
-export default class ChartMainComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {chartKey} = props;
-		console.log("comeMain");
-		console.log(chartKey);
-		this.state = {selModule:GetSelItem(moduleArr, chartKey)};
-	}
+export default function ChartMainComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		chartKey: initialChartKey,
+		...otherProps
+	} = route.params || props;
+	
+	console.log("comeMain");
+	console.log(initialChartKey);
+	
+	const [state, setState] = useState({
+		selModule: GetSelItem(moduleArr, initialChartKey)
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-	}
-
-	onClickSubItem = (itemKey) => {
-		if (itemKey==='status') {
-			this.props.navigation.navigate('ChartDetail');
+	useEffect(() => {
+		const currentParams = route.params || props;
+		const chartKey = currentParams.chartKey;
+		
+		if (chartKey && chartKey !== initialChartKey) {
+			const selModule = GetSelItem(moduleArr, chartKey);
+			setState(prevState => ({
+				...prevState,
+				selModule
+			}));
 		}
-	}
+	}, [route.params, props]);
 
-	onClickMainBtn = (btnKey) => {
+	const onClickSubItem = (itemKey) => {
+		if (itemKey === 'status') {
+			navigation.navigate('ChartDetail');
+		}
+	};
+
+	const onClickMainBtn = (btnKey) => {
 		console.log(btnKey);
-	}
+	};
 
-	render() {
-		const {selModule} = this.state;
-		return (
+	const {selModule} = state;
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
-					label={selModule.label}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					label={selModule?.label || ''}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View
-					onTouchStart={e=>onTouchS(e, this)}
-					onTouchEnd={e=>onTouchE(e, this, 'chartMain')}
+					onTouchStart={e=>onTouchS(e, { setState })}
+					onTouchEnd={e=>onTouchE(e, { setState }, 'chartMain')}
 					style={{...MainCss.button, ...MainCss.buttonExpand}}
 				>
 					<Image source={imgChartWhite} style={{...MainCss.buttonIcon}}></Image>
@@ -66,11 +82,10 @@ export default class ChartMainComponent extends React.Component {
 				<View style={{...MainCss.flexColumn, flex:1}}>
 					<ListWrapper
 						listArr={listChartArr}
-						onClickListItem={listKey=> this.onClickSubItem(listKey)}
+						onClickListItem={listKey=> onClickSubItem(listKey)}
 					></ListWrapper>
 					<View style={{flex:1}}></View>
 				</View>
 			</View>
 		);
-	}
 }

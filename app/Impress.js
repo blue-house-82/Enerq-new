@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { ScrollView, View } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 
 import TopMenuComponent from './pages/layout/TopMenu';
 
-import { MainCss, black, wholeHeight, wholeWidth } from './assets/css';
+import { MainCss, wholeWidth } from './assets/css';
 
 const htmlStr = `<div>
 <p style="color: black; text-align: center;"><strong><em>Kontakt-Adresse</em></strong></p>
@@ -28,27 +28,21 @@ const htmlStr = `<div>
 <p style="color: black;"><a href="https://www.swissanwalt.ch" target="_blank"><strong>SwissAnwalt</strong></a></p>
 </div>`;
 
-export default class ImpressComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {};
-	}
+export default function ImpressComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		...otherProps
+	} = route.params || props;
 
-	componentDidMount() {
-	}
-	componentWillUnmount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-	}
-
-	render() {
-		return (
+	return (
 			<View style={{...MainCss.backBoard}}>
 				<TopMenuComponent
 					label={'Impressum'}
 					hideProfile={true}
-					goBack={e=>this.props.navigation.goBack()}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{flex:1, flexGrow: 1, width:wholeWidth-40, marginLeft:20}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
 					<ScrollView>
@@ -61,5 +55,4 @@ export default class ImpressComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

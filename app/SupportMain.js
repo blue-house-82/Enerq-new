@@ -1,22 +1,21 @@
 
-import React from 'react';
-import axios from 'axios';
-import { Image, Text, View, StyleSheet} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 
-import TopMenuComponent from './pages/layout/TopMenu';
 import { MainCss } from './assets/css';
+import TopMenuComponent from './pages/layout/TopMenu';
 
 import imgDoc from './assets/images/doc.png';
-import imgTicket from './assets/images/ticket.png';
 import imgQuestion from './assets/images/question-black.png';
+import imgTicket from './assets/images/ticket.png';
 
-import imgSupport from './assets/images/support.png';
 import imgSupportWhite from './assets/images/support-white.png';
+import imgSupport from './assets/images/support.png';
 
 import ListWrapper from './pages/layout/ListWrapper';
 import RoundIconBtn from './pages/layout/RoundIconBtn';
 
-import { apiUrl } from './data/config';
 
 const listSupportArr = [
 	{key:'ticketList', label:'Meine Support-Tickets', img:imgTicket},
@@ -28,42 +27,42 @@ const SubPartCss = StyleSheet.create({
 	supportTopImg: { width:60, height:60, opacity:0.6, marginBottom:40, resizeMode:'contain'},
 });
 
-export default class SupportMainComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {selSystem, unRead} = props;
-		this.state = {selSystem, unRead};
-	}
+export default function SupportMainComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	const { selSystem: propSelSystem, unRead: propUnRead } = props;
+	
+	const [selSystem, setSelSystem] = useState(propSelSystem || null);
+	const [unRead, setUnRead] = useState(propUnRead || null);
 
-	componentDidMount() {
-	}
+	useEffect(() => {
+		// Component did mount logic here
+	}, []);
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['selSystem', 'unRead'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
-			}
-		});
-	}
-
-	onClickSubItem = (itemKey) => {
-		if (itemKey==='ticketList') {
-			this.props.navigation.navigate('TicketList');
+	useEffect(() => {
+		if (propSelSystem !== selSystem) {
+			setSelSystem(propSelSystem);
 		}
-	}
+		if (propUnRead !== unRead) {
+			setUnRead(propUnRead);
+		}
+	}, [propSelSystem, propUnRead, selSystem, unRead]);
 
-	onClickCreateTicket = () => {
-		this.props.navigation.navigate('TicketCreate');
-	}
+	const onClickSubItem = (itemKey) => {
+		if (itemKey==='ticketList') {
+			navigation.navigate('TicketList');
+		}
+	};
 
-	render() {
-		const {unRead} = this.state;
-		return (
+	const onClickCreateTicket = () => {
+		navigation.navigate('TicketCreate');
+	};
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label={'Support'}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...SubPartCss.supportTop, ...MainCss.flexColumn}}>
 					<Image source={imgSupport} style={{...SubPartCss.supportTopImg}}></Image>
@@ -75,13 +74,13 @@ export default class SupportMainComponent extends React.Component {
 				<RoundIconBtn
 					img={imgSupportWhite}
 					label='Support anfragen'
-					onClick={e=>this.onClickCreateTicket()}
+					onClick={e=>onClickCreateTicket()}
 				></RoundIconBtn>
 				<View style={{...MainCss.flexColumn, flex:1}}>
 					<ListWrapper
 						listArr={listSupportArr}
 						unRead={unRead}
-						onClickListItem={listKey=> this.onClickSubItem(listKey)}
+						onClickListItem={listKey=> onClickSubItem(listKey)}
 					></ListWrapper>
 					<View style={{flex:1}}></View>
 				</View>
@@ -91,5 +90,4 @@ export default class SupportMainComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

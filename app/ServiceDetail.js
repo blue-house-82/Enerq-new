@@ -1,4 +1,5 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // import SelectDropdown from 'react-native-select-dropdown';
 
@@ -41,73 +42,90 @@ const billContent = [
 	{key:'getFormat', title:'Welchen Service möchten Sie für diese Anlage beantragen?', options:formatSelectArr},
 ]
 
-export default class ServiceDetailComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {serviceKey, moduleInfo, serviceCourseArr, selSystem} = props, selItem = GetSelItem(listServicetArr, serviceKey);
-		this.detailBottom = new Animated.Value(detailH * -1);
-		this.state = {moduleInfo, serviceKey, selItem, serviceCourseArr, detailCourse:{}, courseOpacity:1, selSystem, selSystemIdx:0, selFormatIdx:0};
-	}
+export default function ServiceDetailComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	const { serviceKey, moduleInfo, serviceCourseArr, selSystem } = props;
+	
+	const detailBottom = useRef(new Animated.Value(detailH * -1));
+	
+	const [moduleInfoState, setModuleInfo] = useState(moduleInfo || null);
+	const [serviceKeyState, setServiceKey] = useState(serviceKey || null);
+	const [selItem, setSelItem] = useState(GetSelItem(listServicetArr, serviceKey) || {});
+	const [serviceCourseArrState, setServiceCourseArr] = useState(serviceCourseArr || []);
+	const [detailCourse, setDetailCourse] = useState({});
+	const [courseOpacity, setCourseOpacity] = useState(1);
+	const [selSystemState, setSelSystem] = useState(selSystem || null);
+	const [selSystemIdx, setSelSystemIdx] = useState(0);
+	const [selFormatIdx, setSelFormatIdx] = useState(0);
 
-	componentDidMount() {
-	}
+	useEffect(() => {
+		// Component did mount logic here
+	}, []);
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['serviceKey', 'moduleInfo', 'serviceCourseArr', 'selSystem'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]})
-				if (nextProps.serviceKey) {
-					const selItem = GetSelItem(listServicetArr, nextProps.serviceKey); // moduleArr
-					this.setState({selItem});
-				}
+	useEffect(() => {
+		if (moduleInfo !== moduleInfoState) {
+			setModuleInfo(moduleInfo);
+		}
+		if (serviceKey !== serviceKeyState) {
+			setServiceKey(serviceKey);
+			if (serviceKey) {
+				const newSelItem = GetSelItem(listServicetArr, serviceKey);
+				setSelItem(newSelItem);
 			}
-		});
-	}
+		}
+		if (serviceCourseArr !== serviceCourseArrState) {
+			setServiceCourseArr(serviceCourseArr);
+		}
+		if (selSystem !== selSystemState) {
+			setSelSystem(selSystem);
+		}
+	}, [serviceKey, moduleInfo, serviceCourseArr, selSystem]);
 
-	showDetailCourse = (course) => {
-		if (this.state.detailCourse.status) return;
-		this.setState({detailCourse:course}, () => {
-			Animated.timing(this.detailBottom, { toValue: 0, duration: animateTime, useNativeDriver: false }).start();
-			this.setState({courseOpacity:0.3});
-		})
-	}
+	const showDetailCourse = (course) => {
+		if (detailCourse.status) return;
+		setDetailCourse(course);
+		setTimeout(() => {
+			Animated.timing(detailBottom.current, { toValue: 0, duration: animateTime, useNativeDriver: false }).start();
+			setCourseOpacity(0.3);
+		}, 10);
+	};
 
-	closeDetailCourse = (time=animateTime) => {
-		Animated.timing(this.detailBottom, { toValue: -detailH, duration: time, useNativeDriver: false }).start();
-		this.setState({courseOpacity:1});
-		setTimeout(() => { this.setState({detailCourse:{}}); }, time);
-	}
+	const closeDetailCourse = (time = animateTime) => {
+		Animated.timing(detailBottom.current, { toValue: -detailH, duration: time, useNativeDriver: false }).start();
+		setCourseOpacity(1);
+		setTimeout(() => {
+			setDetailCourse({});
+		}, time);
+	};
 
-	getServiceArr = () => {
-		const {serviceCourseArr, selSystem} = this.state;
-		if (!serviceCourseArr || !selSystem) return [];
-		return serviceCourseArr.filter(item=>{return item.systemId===selSystem.id});
-	}
-
-	render() {
-		const {serviceKey, selItem, serviceCourseArr, detailCourse, courseOpacity} = this.state;
-		// const selInfoKey = selTab==='building'?'build':'mat';
-		return (
+	const getServiceArr = () => {
+		if (!serviceCourseArrState || !selSystemState) return [];
+		return serviceCourseArrState.filter(item => { return item.systemId === selSystemState.id });
+	};
+	// const selInfoKey = selTab==='building'?'build':'mat';
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label={selItem.title || ''}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
-				{serviceKey==='course' &&
+				{serviceKeyState==='course' &&
 					<>
 						<View style={{...DetailCss.courseBoard, opacity:courseOpacity}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
 							<ScrollView>
-								{this.getServiceArr().map((course, idx)=>
-									<DetailCourse course={course} clickDetail={e=>this.showDetailCourse(course)} key={idx}></DetailCourse>
+								{getServiceArr().map((course, idx)=>
+									<DetailCourse course={course} clickDetail={e=>showDetailCourse(course)} key={idx}></DetailCourse>
 								)}
-								{this.getServiceArr().length===0 &&
+								{getServiceArr().length===0 &&
 									<Text style={{color:'black', fontSize:20, marginLeft:20, marginTop:20}}>There is not any requested service.</Text>
 								}
 							</ScrollView>
 						</View>
-						<Animated.View style={[DetailPanCss.board, {bottom:this.detailBottom}]}>
-							<TouchableOpacity style={{...DetailPanCss.redBar}} onPress={e=>this.closeDetailCourse()}>
+						<Animated.View style={[DetailPanCss.board, {bottom:detailBottom.current}]}>
+							<TouchableOpacity style={{...DetailPanCss.redBar}} onPress={e=>closeDetailCourse()}>
 								<Text style={{...MainCss.title}}>Details</Text>
 							</TouchableOpacity>
 							<DetailCourse course={detailCourse} clickDetail={e=>{}}></DetailCourse>
@@ -119,7 +137,7 @@ export default class ServiceDetailComponent extends React.Component {
 						</Animated.View>
 					</>
 				}
-				{serviceKey==='bill' &&
+				{serviceKeyState==='bill' &&
 					<View style={{flex:1, marginHorizontal:50}}>
 						{/* {billContent.map((item, idx)=>
 							<View style={{marginTop:50}} key={idx}>
@@ -127,8 +145,11 @@ export default class ServiceDetailComponent extends React.Component {
 								<SelectDropdown
 									data={item.options}
 									onSelect={(selectedItem, index) => {
-										const selectKey = item.key==='getSystem'?'selSystemIdx':'selFormatIdx';
-										this.setState({[selectKey]:index})
+										if (item.key==='getSystem') {
+											setSelSystemIdx(index);
+										} else {
+											setSelFormatIdx(index);
+										}
 									}}
 									defaultValue={item.options[0]}
 									buttonTextAfterSelection={(selectedItem, index) => { return selectedItem; }}
@@ -142,21 +163,13 @@ export default class ServiceDetailComponent extends React.Component {
 				}
 			</View>
 		);
-	}
 }
 
-class DetailCourse extends React.Component {
-	constructor(props) {
-		super(props);
-	}
-
-	componentDidMount() {
-	}
-
-	render() {
-		const {course} = this.props;
-		const imgStyle = course.status==='done'?DetailCss.courseImgCheck:DetailCss.courseImgTime;
-		return (
+function DetailCourse(props) {
+	const { course, clickDetail } = props;
+	const imgStyle = course.status==='done'?DetailCss.courseImgCheck:DetailCss.courseImgTime;
+	
+	return (
 			<View
 				onTouchStart={e=>onTouchS(e, this) }
 				onTouchEnd={e => onTouchE(e, this, 'serviceDetail') }
@@ -180,5 +193,4 @@ class DetailCourse extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

@@ -272,7 +272,7 @@ export default function RootLayout() {
 		loadStatus[key] = true;
 		if (loadStatus.news && loadStatus.team && loadStatus.token) {
 			setLoading(false);
-      // router.push('/Before');
+      		// router.push('/Before');
 			AsyncStorage.getItem(workerInfoKey).then((str) => {
 				console.log('------      saved worker info      -------');
 				console.log(str);
@@ -300,16 +300,15 @@ export default function RootLayout() {
 
 	const onClickCode = (loading, savedCode, type) => {
 		if (loading) setLoading(true);
-    console.log(codeStr);
 		var qrCodeStr = codeStr || savedCode;
 		if (type==='camera') qrCodeStr = savedCode;
-    console.log(qrCodeStr);
 		axios.post(`${apiUrl}mobile/login-custom.php`, {'passd': qrCodeStr, token}).then(response => {
 			const {success, mainInfo, systemInfo, serviceInfo, appVersion, updateSql} = response.data;
-      console.log(response.data);
 			if (appVerInstall < parseFloat(appVersion)) {
 				setVerNote(true);
 			} else if (success) {
+				// var resSystemInfo = [{"canton": "Solothurn", "carportBuild": "uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "carportMat": "uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "chargeBuild": "uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "chargeMat": "uncheck* *,uncheck* *,uncheck* *,uncheck* *", "customerId": "25", "id": "43", "lastUpdate": "", "latitude": "51.0734", "location": "Dornach", "longitude": "11.2972", "name": "Basel", "number": "0666666123", "pumpBuild": "uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "pumpMat": "uncheck* *,uncheck* *,uncheck* *", "role": "63", "status": "0", "storageBuild": "uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "storageMat": "uncheck* *,uncheck* *,uncheck* *", "street": "Kohliberg 6", "update_time": "1698925206", "voltaicBuild": "check* *,check* *,uncheck*2023-11-14_10:00_4*,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck*2023-11-14_11:00_4*,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "voltaicMat": "uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *,uncheck* *", "zipCode": "99439"}];
+				// var resMainInfo = {"canton": "Zürich", "company": "", "email": "m.tester@gmail.net", "first": "Max", "id": "25", "image": "", "last": "Tester", "last_login": "1759672256", "latitude": "47.3591", "location": "Zürich", "longitude": "8.55292", "other": "0zuW(e@I1^", "passd": "56RKUP6BL63S", "street": "Zollikerstrasse 182", "system_id": null, "tel_1": "", "tel_2": "", "zip_code": "8008"};
 				mainInfo.name = mainInfo.first + ' ' + mainInfo.last;
 				const optionArr = [], serviceArr = [];
 				systemInfo.forEach(item => {
@@ -527,7 +526,7 @@ export default function RootLayout() {
 					initialParams={{ 
 						test, codeStr, selIdx, selFirst, mainInfo, systemOptionArr, 
 						setCodeStr, setSelFirst, onClickCode, setLoading,
-            onClickEmail:(email, passd) => onClickEmail(email, passd), 
+            			onClickEmail:(email, passd) => onClickEmail(email, passd), 
 						showError: (error) => setError(error),
 						setSelSystemIdx: (newIdx) => {
 							saveSelIdx = newIdx;
@@ -759,9 +758,9 @@ export default function RootLayout() {
 					}}
 				/>
 			</Stack>
-      <LoadingComponent
-        loading={loading}
-      ></LoadingComponent>
+			<LoadingComponent
+				loading={loading}
+			></LoadingComponent>
 			<StatusBar style="auto" />
 		</ThemeProvider>
 	);

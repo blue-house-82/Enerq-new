@@ -1,4 +1,4 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScrollView, View } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 
@@ -112,27 +112,21 @@ Insbesondere kann er nicht für Schäden an bestehenden, verdeckten und in den P
 <p style="color:black;">13.1 Dieser Vertragsbestandteil untersteht dem Schweizer Recht. Gerichtsstand ist der Sitz des Unternehmers in Gelterkinden, Kanton Basel-Landschaft.</p>
 </div>`;
 
-export default class AGBComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {};
-	}
+export default function AGBComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		...otherProps
+	} = route.params || props;
 
-	componentDidMount() {
-	}
-	componentWillUnmount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-	}
-
-	render() {
-		return (
+	return (
 			<View style={{...MainCss.backBoard}}>
 				<TopMenuComponent
 					label={'AGB'}
 					hideProfile={true}
-					goBack={e=>this.props.navigation.goBack()}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{flex:1, flexGrow: 1, width:wholeWidth-40, marginLeft:20}} contentContainerStyle={{ flex:1, flexGrow: 1 }}>
 					<ScrollView>
@@ -145,5 +139,4 @@ export default class AGBComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

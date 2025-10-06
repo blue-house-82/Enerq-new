@@ -1,19 +1,19 @@
 import React from 'react';
-import { SafeAreaView, StyleSheet, Text, useColorScheme, Animated, View, } from 'react-native';
-import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
+import { Animated, StyleSheet } from 'react-native';
+import GestureRecognizer from 'react-native-swipe-gestures';
+import PartComponent from './ChartFirst';
+import SubPartComponent from './ChartMain';
 import FirstComponent from './First';
-import TotalComponent from './Total';
-import PartComponent from './pages/chart/ChartFirst';
-import SubPartComponent from './pages/chart/ChartMain';
 import LoadingComponent from './Loading';
-import DetailComponent from './pages/service/ServiceDetail';
-import ErrorComponent from './pages/layout/Error';
 import ProfileComponent from './Profile';
+import DetailComponent from './ServiceDetail';
+import TotalComponent from './Total';
 import { wholeHeight, wholeWidth } from './assets/css';
-import { GetRoleStrCustomer, SetAnimate, pageTime } from './data/common';
+import { GetRoleStrCustomer, pageTime } from './data/common';
 import { moduleData } from './data/constant';
+import ErrorComponent from './pages/layout/Error';
 
-import {enableScreens} from 'react-native-screens';
+import { enableScreens } from 'react-native-screens';
 enableScreens();
 
 // import { GetDevice } from './data/model';

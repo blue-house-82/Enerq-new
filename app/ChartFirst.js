@@ -1,11 +1,12 @@
 
-import React from 'react';
-import { Image, Text, View, ScrollView, StyleSheet} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import TopMenuComponent from './pages/layout/TopMenu';
-import ModuleComponent from './pages/layout/Module';
-import { MainCss, wholeWidth, red, black, white } from './assets/css';
+import { black, MainCss, red, white, wholeWidth } from './assets/css';
 import imgChartWhite from './assets/images/chart-white.png';
+import ModuleComponent from './pages/layout/Module';
+import TopMenuComponent from './pages/layout/TopMenu';
 
 const subVoltaicArr = [
 	{label:'Winkel', value:'70%'},
@@ -37,44 +38,53 @@ const PartCss = StyleSheet.create({
 	tempLabel:{...MainCss.label, fontWeight:500, fontSize:20}
 });
 
-export default class ChartFirstComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {roleInfo} = props;
-		this.state = {roleInfo};
-	}
+export default function ChartFirstComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		roleInfo: initialRoleInfo,
+		setChartKey,
+		...otherProps
+	} = route.params || props;
+	
+	const [state, setState] = useState({
+		roleInfo: initialRoleInfo
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		['roleInfo'].forEach(key => { // 'pageKey', 'pageDepth', 
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]}, () => {
-				});
+	useEffect(() => {
+		const currentParams = route.params || props;
+		['roleInfo'].forEach(key => {
+			const propValue = currentParams[key];
+			if (state[key] !== propValue && propValue !== undefined) {
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
 			}
 		});
-	}
+	}, [route.params, props]);
 
-	onClickModule = (itemKey) => {
-		this.props.setChartKey(itemKey);
-		this.props.navigation.navigate('ChartMain');
-	}
+	const onClickModule = (itemKey) => {
+		if (setChartKey) setChartKey(itemKey);
+		navigation.navigate('ChartMain');
+	};
 
-	render() {
-		const {roleInfo} = this.state;
-		return (
+	const {roleInfo} = state;
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label={'Anlagen'}
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{flex:1}}>
 					<ModuleComponent
 						moduleLabel='Wähle deine Anlage:'
 						roleInfo={roleInfo}
-						onClickModule={itemKey=>this.onClickModule(itemKey)}
+						onClickModule={itemKey=>onClickModule(itemKey)}
 					></ModuleComponent>
 					<View style={{flex:1}}>
 						<View style={{...MainCss.flex, ...PartCss.redBar}}>
@@ -109,5 +119,4 @@ export default class ChartFirstComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }

@@ -1,9 +1,10 @@
-import React from 'react';
-import { Image, Text, View, StyleSheet, ScrollView, TouchableOpacity, Linking} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { black, green, grey, MainCss, red, wholeWidth } from './assets/css';
 import { serverUrl } from './data/config';
 import TopMenuComponent from './pages/layout/TopMenu';
-import { MainCss, wholeHeight, wholeWidth, red, white, grey, black, green } from './assets/css';
 
 import imgBill from './assets/images/bill.png';
 import imgCheck from './assets/images/check.png';
@@ -21,36 +22,46 @@ export const InvoiceMainCss = StyleSheet.create({
 	label:{color:black, fontSize:18, fontFamily:'SF Pro Rounded', lineHeight:22}
 });
 
-export default class InvoiceMainComponent extends React.Component {
-	constructor(props) {
-		super(props);
-		const {invoiceArr} = props;
-		this.state = {invoiceArr};
-	}
+export default function InvoiceMainComponent(props) {
+	const navigation = useNavigation();
+	const route = useRoute();
+	
+	// Get initial params from route or props
+	const {
+		invoiceArr: initialInvoiceArr,
+		setSelInvoice,
+		...otherProps
+	} = route.params || props;
+	
+	const [state, setState] = useState({
+		invoiceArr: initialInvoiceArr || []
+	});
 
-	componentDidMount() {
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
+	useEffect(() => {
+		const currentParams = route.params || props;
 		['invoiceArr'].forEach(key => {
-			if (this.state[key] !== nextProps[key]) {
-				this.setState({[key]:nextProps[key]});
+			const propValue = currentParams[key];
+			if (state[key] !== propValue && propValue !== undefined) {
+				setState(prevState => ({
+					...prevState,
+					[key]: propValue
+				}));
 			}
 		});
-	}
+	}, [route.params, props]);
 
-	openInvoicePDF = (pdfName) => {
+	const openInvoicePDF = (pdfName) => {
 		Linking.openURL(serverUrl+'other/invoice_pdf/'+pdfName+'.pdf');
-	}
+	};
 
-	render() {
-		const {invoiceArr} = this.state;
-		return (
+	const { invoiceArr } = state;
+	
+	return (
 			<View style={{...MainCss.backBoard, ...MainCss.flexColumn}}>
 				<TopMenuComponent
 					label='Rechnungen der Anlage'
-					openProfile={()=>this.props.navigation.navigate('Profile')}
-					goBack={e=>this.props.navigation.goBack()}
+					openProfile={()=>navigation.navigate('Profile')}
+					goBack={e=>navigation.goBack()}
 				></TopMenuComponent>
 				<View style={{...MainCss.flex, width:wholeWidth, marginTop:45, marginBottom:50}}>
 					<Image source={imgBill} style={{width:60, height:55, resizeMode:'contain', opacity:0.5}}></Image>
@@ -66,7 +77,7 @@ export default class InvoiceMainComponent extends React.Component {
 						{invoiceArr.map((item, idx)=>
 							<View style={{...MainCss.flex, width:wholeWidth, height:50, borderBottomColor:grey, borderBottomWidth:idx===invoiceArr.length-1?1:0 }} key={idx}>
 								<View style={{width:pName, ...InvoiceMainCss.borderRight}}>
-									<TouchableOpacity onPress={e=>this.props.setSelInvoice(item.name)}>{/*  openInvoicePDF*/}
+									<TouchableOpacity onPress={e=>setSelInvoice && setSelInvoice(item.name)}>{/*  openInvoicePDF*/}
 										<Text style={{...MainCss.label, color:red, textDecorationLine:'underline'}}>{item.name+'.pdf'}</Text>
 									</TouchableOpacity>
 								</View>
@@ -87,5 +98,4 @@ export default class InvoiceMainComponent extends React.Component {
 				</View>
 			</View>
 		);
-	}
 }
