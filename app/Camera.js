@@ -1,66 +1,132 @@
+// Install: npx expo install expo-camera
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-// import QRCodeScanner from 'react-native-qrcode-scanner';
-
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { MainCss } from './assets/css';
 import TopMenuComponent from './pages/layout/TopMenu';
 
-import { MainCss } from './assets/css';
+export default function CameraComponent(props) {
+    const navigation = useNavigation();
+    const route = useRoute();
+    const { setCodeStr: propSetCodeStr } = route.params || props;
+    
+    const [permission, requestPermission] = useCameraPermissions();
+    const [scanned, setScanned] = useState(false);
+
+    const handleBarCodeScanned = ({ type, data }) => {
+        setScanned(true);
+        
+        if (data.length !== 12) {
+            alert('Invalid QR Code - Must be 12 characters');
+            setScanned(false);
+            return;
+        }
+		
+        if (propSetCodeStr) propSetCodeStr(data);
+        navigation.goBack();
+    };
+
+    if (!permission) {
+        return (
+            <View style={{...MainCss.backBoard, justifyContent: 'center', alignItems: 'center'}}>
+                <Text>Requesting camera permission...</Text>
+            </View>
+        );
+    }
+
+    if (!permission.granted) {
+        return (
+            <View style={{...MainCss.backBoard, justifyContent: 'center', alignItems: 'center'}}>
+                <TopMenuComponent
+                    label={'QR-Code Scanner'}
+                    openProfile={()=>navigation.navigate('Profile')}
+                    goBack={e=>navigation.goBack()}
+                />
+                <Text style={{textAlign: 'center', margin: 20}}>
+                    No access to camera. Please enable camera permissions in settings.
+                </Text>
+                <TouchableOpacity 
+                    style={{backgroundColor: '#007AFF', padding: 10, borderRadius: 5}} 
+                    onPress={requestPermission}
+                >
+                    <Text style={{color: 'white'}}>Grant Permission</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    return (
+        <View style={{...MainCss.backBoard}}>
+            <TopMenuComponent
+                label={'QR-Code Scanner'}
+                openProfile={()=>navigation.navigate('Profile')}
+                goBack={e=>navigation.goBack()}
+            />
+            <CameraView
+                style={{flex: 1}}
+                facing={'back'}
+                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                barcodeScannerSettings={{
+                    barcodeTypes: ['qr', 'pdf417'],
+                }}
+            >
+                <View style={styles.overlay}>
+                    <View style={styles.scanArea} />
+                    <Text style={styles.instructions}>
+                        Halten Sie den QR-Code in den Rahmen
+                    </Text>
+                    {scanned && (
+                        <TouchableOpacity style={styles.scanAgainButton} onPress={() => setScanned(false)}>
+                            <Text style={styles.scannedText}>
+                                Tap to scan again
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </CameraView>
+        </View>
+    );
+}
 
 const styles = StyleSheet.create({
-	centerText: { flex: 1, fontSize: 18, padding: 32, color: '#777', textAlign:'center' },
-	textBold: { color: '#000', textAlign:'center' },
-	// fontWeight: '500', 
-	buttonText: { fontSize: 21, color: 'rgb(0,122,255)' },
-	buttonTouchable: { padding: 16 }
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scanArea: {
+        width: 250,
+        height: 250,
+        borderWidth: 2,
+        borderColor: '#00ff00',
+        backgroundColor: 'transparent',
+    },
+    instructions: {
+        position: 'absolute',
+        bottom: 120,
+        left: 20,
+        right: 20,
+        color: 'white',
+        fontSize: 16,
+        textAlign: 'center',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: 15,
+        borderRadius: 8,
+    },
+    scanAgainButton: {
+        position: 'absolute',
+        bottom: 60,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    scannedText: {
+        color: '#00ff00',
+        fontSize: 16,
+        textAlign: 'center',
+        fontWeight: 'bold',
+    },
 });
-
-export default function CameraComponent(props) {
-	const navigation = useNavigation();
-	const route = useRoute();
-	const { setCodeStr: propSetCodeStr } = props;
-	
-	const [codeStr, setCodeStr] = useState('');
-
-	useEffect(() => {
-		// Component did mount logic here
-	}, []);
-
-	const onSuccess = (e) => {
-		const str = e.data;
-		setCodeStr(str);
-		if (str.length !== 12) return;
-		if (propSetCodeStr) propSetCodeStr(str);
-		navigation.goBack();
-		// Linking.openURL(e.data).catch(err =>
-		// 	console.error('An error occured', err)
-		// );
-	};
-
-	return (
-		<View style={{...MainCss.backBoard}}>
-			<TopMenuComponent
-				label={'QR-Code Scanner'}
-				openProfile={()=>navigation.navigate('Profile')}
-				goBack={e=>navigation.goBack()}
-			></TopMenuComponent>
-			{/* <QRCodeScanner
-				onRead={onSuccess}
-				// flashMode={RNCamera.Constants.FlashMode.torch}
-				topContent={
-					<View style={{margin:5}}>
-						<Text style={{...MainCss.label, color:black}}>Halten Sie den QR-Code auf Ihrem Neukunden-Brief in den Sucher der Kamera.</Text>
-						<Text style={{...MainCss.label, color:black}}>Bewegen Sie sie etwas vor und zurück.</Text>
-					</View>
-				}
-				topViewStyle={{display:'flex', flexDirection:'row', alignItems:'flex-start'}}
-				bottomViewStyle={{backgroundColor:'none', height:50}}
-				bottomContent={
-					<TouchableOpacity style={styles.buttonTouchable} onPress={e=>navigation.goBack()}>
-						<Text style={styles.buttonText}>Go Back</Text>
-					</TouchableOpacity>
-				}
-			/> */}
-		</View>
-	);
-}

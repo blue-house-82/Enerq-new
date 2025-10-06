@@ -1,4 +1,4 @@
-import { defaultModule, moduleData } from "./constant";
+import { defaultModule } from "./constant";
 
 export function GetTimeStrInfo(dateVal) {
 	const year = dateVal.getFullYear(),
@@ -255,7 +255,7 @@ export function onTouchS(e, self) {
 	self.touchSX = e.nativeEvent.pageX; self.touchST = Date.now();
 }
 
-export function onTouchE(e, self, type, buttonKey) {
+export function onTouchE(e, self, type, buttonKey, clickFun) {
 	const touchDisX = Math.abs(e.nativeEvent.pageX - self.touchSX),
 		touchDisT = Date.now() - self.touchST;
 	if (touchDisX < 40 && touchDisT < 200) {
@@ -267,7 +267,7 @@ export function onTouchE(e, self, type, buttonKey) {
 		else if (type==='module') self.props.onClickModule(buttonKey);
 		else if (type==='login') self.setLogin();
 		else if (type==='logout') self.props.setLogout();
-		else if (type==='chartTab') self.onClickTab(buttonKey);
+		else if (type==='chartTab') {clickFun(buttonKey);}
 		else if (type==='serviceDetail') self.props.clickDetail();
 		else if (type==='serviceCreate') self.props.submitCreate();
 		else if (type==='roundIconBtn') self.props.onClick();

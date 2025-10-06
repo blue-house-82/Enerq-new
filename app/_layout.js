@@ -535,8 +535,8 @@ export default function RootLayout() {
 					}}
 				/>
 
-				{/* <Stack.Screen
-					name="QRScan"
+				<Stack.Screen
+					name="Camera"
 					options={{ headerShown: false }}
 					initialParams={{
 						openProfile: () => setProfile(true),
@@ -544,7 +544,7 @@ export default function RootLayout() {
 							setTimeout(() => { onClickCode(true, str, 'camera') }, 100);
 						}
 					}}
-				/> */}
+				/>
 				<Stack.Screen
 					name="Total"
 					options={{ headerShown: false }}

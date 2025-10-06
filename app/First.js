@@ -9,6 +9,7 @@ import { red, white } from './assets/css/MainCss';
 import imgLogo from './assets/images/logo-image.png';
 import imgLabel from './assets/images/logo-label.png';
 import imgPhone from './assets/images/phone.png';
+import imgQr from './assets/images/qr.png';
 import { SetAnimateArr } from './data/common';
 
 const tabArr = [
@@ -213,12 +214,12 @@ export default function FirstComponent(props) {
 								<Text style={{...MainCss.label}}>Beim Auftragsabschluss hast Du</Text>
 								<Text style={{...MainCss.label}}>einen Code von uns erhalten.</Text>
 							</View>
-							{/* <TouchableOpacity style={{...MainCss.button}} onPress={() => navigation.navigate('QRScan')}>
+							<TouchableOpacity style={{...MainCss.button}} onPress={() => navigation.navigate('Camera')}>
 								<View style={{...MainCss.buttonIcon}}>
 									<Image source={imgQr} style={{...MainCss.buttonImg}}></Image>
 								</View>
 								<Text style={{...MainCss.buttonIconLabel}}>QR-Code scannen</Text>
-							</TouchableOpacity> */}
+							</TouchableOpacity>
 							
 							<TextInput
 								placeholder='Code eingeben'
